@@ -1,0 +1,6 @@
+{
+  "name": "Suiza Studio - Creative Suite",
+  "description": "High-performance memory-safe creative suite powered by Rust architecture with modern Creative Cloud UI for raster photo editing, vector illustration, and desktop publishing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
