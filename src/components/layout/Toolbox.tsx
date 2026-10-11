@@ -42,7 +42,7 @@ export const Toolbox: React.FC = () => {
     showShortcutFeedback,
   } = useStudio();
 
-  // 1. Photo Tools (Photoshop CC / GIMP)
+  // 1. Photo Tools (Raster Retouching)
   const photoTools: { id: ToolId; name: string; key: string; icon: React.ReactNode }[] = [
     { id: 'move', name: 'Move / Selection', key: 'V', icon: <Move className="w-4 h-4" /> },
     { id: 'marquee', name: 'Rectangular Marquee', key: 'M', icon: <Square className="w-4 h-4 stroke-dashed" /> },
@@ -59,7 +59,7 @@ export const Toolbox: React.FC = () => {
     { id: 'zoom', name: 'Zoom Tool', key: 'Z', icon: <ZoomIn className="w-4 h-4" /> },
   ];
 
-  // 2. Vector Tools (Illustrator CC / Inkscape)
+  // 2. Vector Tools (Bézier & Geometry)
   const vectorTools: { id: ToolId; name: string; key: string; icon: React.ReactNode }[] = [
     { id: 'move', name: 'Selection Tool', key: 'V', icon: <MousePointer2 className="w-4 h-4" /> },
     { id: 'direct-select', name: 'Direct Selection (Nodes)', key: 'A', icon: <Move className="w-4 h-4" /> },
@@ -75,7 +75,7 @@ export const Toolbox: React.FC = () => {
     { id: 'zoom', name: 'Zoom Tool', key: 'Z', icon: <ZoomIn className="w-4 h-4" /> },
   ];
 
-  // 3. Publish Tools (InDesign CC / Scribus)
+  // 3. Publish Tools (Editorial Layout)
   const publishTools: { id: ToolId; name: string; key: string; icon: React.ReactNode }[] = [
     { id: 'move', name: 'Selection Tool', key: 'V', icon: <MousePointer2 className="w-4 h-4" /> },
     { id: 'direct-select', name: 'Direct Selection', key: 'A', icon: <Move className="w-4 h-4" /> },
@@ -120,14 +120,14 @@ export const Toolbox: React.FC = () => {
               }`}
             >
               {tool.icon}
-              {/* Corner notch in Adobe CC style */}
+              {/* Sub-tool indicator notch */}
               <span className="absolute bottom-1 right-1 w-1 h-1 border-b border-r border-current opacity-40" />
             </button>
           );
         })}
       </div>
 
-      {/* Bottom: Color Chips (Adobe CC / GIMP standard) */}
+      {/* Bottom: Color Chips */}
       <div
         className="flex flex-col items-center gap-2 pt-2 border-t w-full"
         style={{ borderColor: theme.border }}

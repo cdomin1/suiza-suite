@@ -81,7 +81,7 @@ export function mapBlendMode(blendMode: string): GlobalCompositeOperation {
   }
 }
 
-// Create clean Photoshop-standard photo canvas (White, Transparent Checkered, or Black)
+// Create clean professional photo canvas (White, Transparent Checkered, or Black)
 export function generateSamplePhotoCanvas(
   width: number,
   height: number,
@@ -100,15 +100,15 @@ export function generateSamplePhotoCanvas(
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
   } else if (background === 'transparent') {
-    // Leave fully transparent - Photoshop checkerboard pattern is rendered on the viewport
+    // Leave fully transparent - Transparency checkerboard pattern is rendered on the viewport
     ctx.clearRect(0, 0, width, height);
   }
 
   return canvas.toDataURL('image/png');
 }
 
-// Draw standard Photoshop checkerboard pattern on a 2D canvas context
-export function drawPhotoshopCheckerboard(
+// Draw standard transparency checkerboard pattern on a 2D canvas context
+export function drawTransparencyCheckerboard(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
@@ -129,7 +129,11 @@ export function drawPhotoshopCheckerboard(
   ctx.restore();
 }
 
-// Return clean empty vector artboard (like Adobe Illustrator / Affinity Designer)
+// Alias for raster transparency
+export const drawRasterTransparency = drawTransparencyCheckerboard;
+export const drawPhotoshopCheckerboard = drawTransparencyCheckerboard;
+
+// Return clean empty vector artboard
 export function generateSampleVectorPaths(width: number, height: number): VectorPath[] {
   return [];
 }

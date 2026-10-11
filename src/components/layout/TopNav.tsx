@@ -46,7 +46,7 @@ export const TopNav: React.FC = () => {
         {osMode === 'macos' && (
           <div className="flex items-center gap-2 mr-1">
             <span
-              onClick={() => showShortcutFeedback('Closed Suiza-Suite Window')}
+              onClick={() => showShortcutFeedback('Closed SUIZA Atelier Window')}
               className="w-3 h-3 rounded-full bg-[#ff5f57] border border-[#e0443e] cursor-pointer hover:opacity-80 shadow-xs flex items-center justify-center text-[8px] text-red-950 font-bold opacity-90 group"
               title="Close Window (⌘W)"
             >
@@ -60,7 +60,7 @@ export const TopNav: React.FC = () => {
               <span className="opacity-0 group-hover:opacity-100 leading-none">−</span>
             </span>
             <span
-              onClick={() => showShortcutFeedback('Entered macOS Full Screen')}
+              onClick={() => showShortcutFeedback('Entered Full Screen')}
               className="w-3 h-3 rounded-full bg-[#28c840] border border-[#1aab29] cursor-pointer hover:opacity-80 shadow-xs flex items-center justify-center text-[8px] text-emerald-950 font-bold opacity-90 group"
               title="Full Screen (⌘F)"
             >
@@ -79,10 +79,10 @@ export const TopNav: React.FC = () => {
           }}
         >
           <span className="text-[#0d99ff] font-black text-sm leading-none">✦</span>
-          <span className="text-xs tracking-tight">Suiza-Suite</span>
+          <span className="text-xs tracking-tight font-bold">SUIZA Atelier</span>
         </div>
 
-        {/* Affinity / Creative Cloud Persona Switcher */}
+        {/* SUIZA Persona Switcher */}
         <div
           className="flex items-center p-0.5 rounded border gap-0.5"
           style={{
@@ -90,10 +90,10 @@ export const TopNav: React.FC = () => {
             borderColor: theme.border,
           }}
         >
-          {/* 1. Suiza-Photo */}
+          {/* 1. SUIZA Photo */}
           <button
             onClick={() => setPersona('photo')}
-            title="Suiza-Photo (Raster & Retouching in Safe Rust / Photoshop CC)"
+            title="SUIZA Photo (Raster & Darkroom Retouching)"
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all ${
               persona === 'photo'
                 ? 'bg-[#0d99ff] text-white shadow-sm font-bold'
@@ -106,10 +106,10 @@ export const TopNav: React.FC = () => {
             <span className="hidden sm:inline">Photo</span>
           </button>
 
-          {/* 2. Suiza-Vector */}
+          {/* 2. SUIZA Vector */}
           <button
             onClick={() => setPersona('vector')}
-            title="Suiza-Vector (Inkscape Bézier Engine in Safe Rust / Illustrator CC)"
+            title="SUIZA Vector (Bézier Engine & Vector Design)"
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all ${
               persona === 'vector'
                 ? 'bg-[#f59e0b] text-neutral-950 shadow-sm font-bold'
@@ -122,10 +122,10 @@ export const TopNav: React.FC = () => {
             <span className="hidden sm:inline">Vector</span>
           </button>
 
-          {/* 3. Suiza-Publish */}
+          {/* 3. SUIZA Publish */}
           <button
             onClick={() => setPersona('publish')}
-            title="Suiza-Publish (Scribus Layout Engine in Safe Rust / InDesign CC)"
+            title="SUIZA Publish (Publication & Editorial Spreads)"
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all ${
               persona === 'publish'
                 ? 'bg-[#ec4899] text-white shadow-sm font-bold'
@@ -140,7 +140,7 @@ export const TopNav: React.FC = () => {
         </div>
       </div>
 
-      {/* ZONE 2: Central Document Status (Adobe CC Document Title Bar) */}
+      {/* ZONE 2: Central Document Status (Studio Document Title Bar) */}
       <div
         className="hidden md:flex items-center gap-2 px-3 py-0.5 rounded border text-[11px] font-mono shadow-xs"
         style={{

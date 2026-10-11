@@ -37,8 +37,9 @@ export const NewDocumentModal: React.FC = () => {
       vectorPaths = generateSampleVectorPaths(width, height);
     }
 
-    const docExt = persona === 'photo' ? '.psd' : persona === 'vector' ? '.ai' : '.indd';
-    const finalDocName = docName.includes('.') ? docName : `${docName}${docExt}`;
+    const docExt = '.szt';
+    const cleanDocName = docName.replace(/\.(szt|suiza|psd|ai|indd)$/i, '');
+    const finalDocName = `${cleanDocName}${docExt}`;
 
     const newProject = {
       id: `project-${Date.now()}`,
@@ -227,7 +228,7 @@ export const NewDocumentModal: React.FC = () => {
                 className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-neutral-200"
               >
                 <option value="white">White (Standard)</option>
-                <option value="transparent">Transparent (Photoshop Checkerboard)</option>
+                <option value="transparent">Transparent (Checkerboard Pattern)</option>
                 <option value="black">Black</option>
               </select>
             </div>

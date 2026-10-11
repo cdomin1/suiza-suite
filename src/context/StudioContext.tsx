@@ -14,6 +14,10 @@ import {
   VectorPath,
   VectorShape,
   PublishFrame,
+  Guide,
+  SnappingConfig,
+  ColorSwatch,
+  SwatchPalette,
 } from '../types';
 import { DEFAULT_SHORTCUTS, THEMES } from '../constants/shortcuts';
 import { SAMPLE_PLUGINS } from '../constants/presets';
@@ -54,6 +58,7 @@ interface StudioContextType {
     fillColor: string;
     fontFamily: string;
     fontSize: number;
+    fontWeight: string;
     textColor: string;
     textAlign: 'left' | 'center' | 'right' | 'justify';
     columnCount: number;
@@ -101,6 +106,20 @@ interface StudioContextType {
   setShowGuides: (s: boolean | ((prev: boolean) => boolean)) => void;
   showGrid: boolean;
   setShowGrid: (s: boolean | ((prev: boolean) => boolean)) => void;
+  guides: Guide[];
+  setGuides: React.Dispatch<React.SetStateAction<Guide[]>>;
+  addGuide: (type: 'horizontal' | 'vertical', position: number) => Guide;
+  updateGuide: (id: string, position: number) => void;
+  removeGuide: (id: string) => void;
+  clearGuides: () => void;
+  snapToGuides: boolean;
+  setSnapToGuides: React.Dispatch<React.SetStateAction<boolean>>;
+  snappingConfig: SnappingConfig;
+  setSnappingConfig: React.Dispatch<React.SetStateAction<SnappingConfig>>;
+  updateSnappingConfig: (updates: Partial<SnappingConfig>) => void;
+  toggleSnapping: () => void;
+  lockGuides: boolean;
+  setLockGuides: React.Dispatch<React.SetStateAction<boolean>>;
 
   // History & Non-destructive Steps
   history: HistoryStep[];
@@ -109,6 +128,17 @@ interface StudioContextType {
   redo: () => void;
   pushHistoryStep: (title: string, newLayers?: Layer[]) => void;
   restoreHistoryStep: (index: number) => void;
+  clearHistory: () => void;
+  createSnapshot: (customTitle?: string) => void;
+
+  // Swatches & Custom Color Palettes
+  palettes: SwatchPalette[];
+  setPalettes: React.Dispatch<React.SetStateAction<SwatchPalette[]>>;
+  addSwatch: (paletteId: string, swatch: Omit<ColorSwatch, 'id'>) => ColorSwatch;
+  removeSwatch: (paletteId: string, swatchId: string) => void;
+  createPalette: (name: string, description?: string) => SwatchPalette;
+  deletePalette: (paletteId: string) => void;
+  applySwatchToSelection: (color: string, target?: 'fill' | 'stroke' | 'text') => void;
 
   // Modals & Panels
   activeModal: 'shortcuts' | 'export' | 'new-doc' | 'rust-arch' | 'plugins' | 'cloud-sync' | 'linux-native' | null;
@@ -157,7 +187,7 @@ interface StudioContextType {
   publishParagraphStyle: string;
   setPublishParagraphStyle: (s: string) => void;
 
-  // Selection, Grouping & Arrangement (Adobe CC Multi-Selection & Grouping)
+  // Selection, Grouping & Arrangement (Professional Multi-Selection & Grouping)
   selectedLayerIds: string[];
   setSelectedLayerIds: React.Dispatch<React.SetStateAction<string[]>>;
   groupSelectedObjects: () => void;
@@ -206,6 +236,70 @@ interface StudioContextType {
 
 const StudioContext = createContext<StudioContextType | undefined>(undefined);
 
+// Default Factory Swatch Palettes for Suisse Creative Suite
+export const DEFAULT_PALETTES: SwatchPalette[] = [
+  {
+    id: 'palette-core',
+    name: 'Brand & Process CMYK',
+    description: 'Suiza identity, standard process plates, and high-contrast core tones',
+    swatches: [
+      { id: 'sw-none', name: 'None / Transparent', color: 'transparent', isNone: true },
+      { id: 'sw-white', name: 'Paper White', color: '#ffffff' },
+      { id: 'sw-rich-black', name: 'Rich Black (60/40/40/100)', color: '#090a0f' },
+      { id: 'sw-cyan', name: 'Process Cyan', color: '#00a3e0' },
+      { id: 'sw-magenta', name: 'Process Magenta', color: '#e4007c' },
+      { id: 'sw-yellow', name: 'Process Yellow', color: '#fed100' },
+      { id: 'sw-black', name: 'Process Black', color: '#000000' },
+      { id: 'sw-suiza-blue', name: 'Suiza Electric Blue', color: '#0d99ff', isFavorite: true },
+      { id: 'sw-amber', name: 'Vibrant Amber', color: '#f59e0b' },
+      { id: 'sw-emerald', name: 'Alpine Pine', color: '#10b981' },
+      { id: 'sw-rose', name: 'Editorial Rose', color: '#ec4899', isFavorite: true },
+      { id: 'sw-indigo', name: 'Deep Indigo', color: '#6366f1' },
+    ],
+  },
+  {
+    id: 'palette-pantone',
+    name: 'Pantone® PMS Solid',
+    description: 'Pre-press spot color reproductions for editorial & print design',
+    swatches: [
+      { id: 'sw-p286', name: 'PANTONE 286 C (Deep Cobalt)', color: '#0033a0' },
+      { id: 'sw-p186', name: 'PANTONE 186 C (Vivid Crimson)', color: '#c8102e' },
+      { id: 'sw-p368', name: 'PANTONE 368 C (Spring Green)', color: '#78be20' },
+      { id: 'sw-p021', name: 'PANTONE 021 C (Bright Orange)', color: '#ff5100' },
+      { id: 'sw-p2685', name: 'PANTONE 2685 C (Royal Violet)', color: '#330072' },
+      { id: 'sw-p877', name: 'PANTONE 877 C (Metallic Silver)', color: '#8a8d8f' },
+      { id: 'sw-pwg1', name: 'PANTONE Warm Gray 1 C', color: '#d7d2cb' },
+      { id: 'sw-pcg7', name: 'PANTONE Cool Gray 7 C', color: '#97999b' },
+    ],
+  },
+  {
+    id: 'palette-modern-ui',
+    name: 'Modern UI & Editorial',
+    description: 'Curated modern hues for layout cards, shapes, and typography',
+    swatches: [
+      { id: 'sw-slate-900', name: 'Slate Deep 900', color: '#0f172a' },
+      { id: 'sw-slate-500', name: 'Slate Mid 500', color: '#64748b' },
+      { id: 'sw-sky-400', name: 'Sky Glow 400', color: '#38bdf8' },
+      { id: 'sw-teal-500', name: 'Pacific Teal 500', color: '#14b8a6' },
+      { id: 'sw-violet-600', name: 'Electric Violet 600', color: '#7c3aed' },
+      { id: 'sw-fuchsia-500', name: 'Neon Fuchsia 500', color: '#d946ef' },
+      { id: 'sw-coral-500', name: 'Living Coral 500', color: '#f97316' },
+      { id: 'sw-warm-sand', name: 'Nordic Sand', color: '#f3ede2' },
+    ],
+  },
+  {
+    id: 'palette-gradients',
+    name: 'Gradients & Blends',
+    description: 'Multi-stop linear and radial blends for backgrounds and fills',
+    swatches: [
+      { id: 'sw-grad-aurora', name: 'Aurora Borealis', color: 'linear-gradient(135deg, #0d99ff 0%, #10b981 100%)', type: 'gradient' },
+      { id: 'sw-grad-sunset', name: 'Cosmic Sunset', color: 'linear-gradient(135deg, #ec4899 0%, #f59e0b 100%)', type: 'gradient' },
+      { id: 'sw-grad-neon', name: 'Cyberpunk Neon', color: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)', type: 'gradient' },
+      { id: 'sw-grad-dark', name: 'Deep Space Mesh', color: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)', type: 'gradient' },
+    ],
+  },
+];
+
 // Initial Default Project Builder
 function createInitialProject(persona: StudioPersona): DocumentProject {
   const isPublish = persona === 'publish';
@@ -238,7 +332,24 @@ function createInitialProject(persona: StudioPersona): DocumentProject {
   };
 
   const layers: Layer[] = [baseLayer];
-  if (persona === 'publish') {
+  if (persona === 'photo') {
+    layers.push({
+      id: 'layer-photo-title',
+      name: 'Typography Title',
+      type: 'text',
+      visible: true,
+      locked: false,
+      opacity: 100,
+      blendMode: 'normal',
+      textContent: 'Suiza Studio',
+      textFontSize: 72,
+      textFontFamily: 'Plus Jakarta Sans',
+      textFontWeight: '700',
+      textColor: '#0f172a',
+      x: 140,
+      y: 160,
+    });
+  } else if (persona === 'publish') {
     layers.push({
       id: 'layer-pub-header',
       name: 'Editorial Headline Frame',
@@ -273,7 +384,7 @@ function createInitialProject(persona: StudioPersona): DocumentProject {
 
   return {
     id: `project-${Date.now()}`,
-    name: persona === 'photo' ? 'Untitled-Photo-1.psd' : persona === 'vector' ? 'Untitled-Vector-1.ai' : 'Untitled-Publication-1.indd',
+    name: persona === 'photo' ? 'Untitled-Photo-1.szt' : persona === 'vector' ? 'Untitled-Vector-1.szt' : 'Untitled-Publication-1.szt',
     width,
     height,
     dpi: 300,
@@ -327,6 +438,7 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     fillColor: '#38bdf8',
     fontFamily: 'Plus Jakarta Sans',
     fontSize: 48,
+    fontWeight: '700',
     textColor: '#ffffff',
     textAlign: 'left' as const,
     columnCount: 2,
@@ -389,6 +501,16 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setPanY(0);
   }, []);
 
+  // Document State Refs for Non-destructive History Snapshotting
+  const projectRef = useRef(project);
+  const vectorShapesRef = useRef<VectorShape[]>([]);
+  const publishFramesRef = useRef<PublishFrame[]>([]);
+  const guidesRef = useRef<Guide[]>([]);
+  const personaRef = useRef(persona);
+
+  useEffect(() => { projectRef.current = project; }, [project]);
+  useEffect(() => { personaRef.current = persona; }, [persona]);
+
   // Non-destructive History
   const [history, setHistory] = useState<HistoryStep[]>(() => {
     const saved = loadRevisions();
@@ -398,68 +520,33 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       title: 'Initial Document Creation',
       timestamp: Date.now(),
       layersSnapshot: project.layers,
+      vectorShapesSnapshot: [],
+      publishFramesSnapshot: [],
+      guidesSnapshot: [],
     }];
   });
   const [historyIndex, setHistoryIndex] = useState(0);
 
   const pushHistoryStep = useCallback((title: string, newLayers?: Layer[]) => {
-    const snapshot = newLayers ? JSON.parse(JSON.stringify(newLayers)) : JSON.parse(JSON.stringify(project.layers));
+    const snapshot = newLayers ? JSON.parse(JSON.stringify(newLayers)) : JSON.parse(JSON.stringify(projectRef.current.layers));
     const step: HistoryStep = {
       id: `step-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
       title,
       timestamp: Date.now(),
+      persona: personaRef.current,
       layersSnapshot: snapshot,
+      vectorShapesSnapshot: JSON.parse(JSON.stringify(vectorShapesRef.current || [])),
+      publishFramesSnapshot: JSON.parse(JSON.stringify(publishFramesRef.current || [])),
+      guidesSnapshot: JSON.parse(JSON.stringify(guidesRef.current || [])),
     };
     setHistory(prev => {
       const sliced = prev.slice(0, historyIndex + 1);
-      const updated = [...sliced, step].slice(-20); // retain last 20
+      const updated = [...sliced, step].slice(-50); // retain last 50 steps
       saveRevisions(updated);
       return updated;
     });
     setHistoryIndex(prev => prev + 1);
-  }, [project.layers, historyIndex]);
-
-  const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      const nextIndex = historyIndex - 1;
-      const step = history[nextIndex];
-      setHistoryIndex(nextIndex);
-      if (step) {
-        setProject(p => ({
-          ...p,
-          layers: JSON.parse(JSON.stringify(step.layersSnapshot)),
-          updatedAt: Date.now(),
-        }));
-      }
-    }
-  }, [historyIndex, history]);
-
-  const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const nextIndex = historyIndex + 1;
-      const step = history[nextIndex];
-      setHistoryIndex(nextIndex);
-      if (step) {
-        setProject(p => ({
-          ...p,
-          layers: JSON.parse(JSON.stringify(step.layersSnapshot)),
-          updatedAt: Date.now(),
-        }));
-      }
-    }
-  }, [historyIndex, history]);
-
-  const restoreHistoryStep = useCallback((index: number) => {
-    if (index >= 0 && index < history.length) {
-      setHistoryIndex(index);
-      const step = history[index];
-      setProject(p => ({
-        ...p,
-        layers: JSON.parse(JSON.stringify(step.layersSnapshot)),
-        updatedAt: Date.now(),
-      }));
-    }
-  }, [history]);
+  }, [historyIndex]);
 
   // Visual shortcut HUD on trigger
   const [activeShortcutHint, setActiveShortcutHint] = useState<string | null>(null);
@@ -470,6 +557,140 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       setActiveShortcutHint(prev => (prev === label ? null : prev));
     }, 1200);
   }, []);
+
+  const restoreHistoryStep = useCallback((index: number) => {
+    if (index >= 0 && index < history.length) {
+      setHistoryIndex(index);
+      const step = history[index];
+      if (step) {
+        if (step.layersSnapshot && step.layersSnapshot.length > 0) {
+          setProject(p => ({
+            ...p,
+            layers: JSON.parse(JSON.stringify(step.layersSnapshot)),
+            updatedAt: Date.now(),
+          }));
+        }
+        if (step.vectorShapesSnapshot) {
+          setVectorShapes(JSON.parse(JSON.stringify(step.vectorShapesSnapshot)));
+        }
+        if (step.publishFramesSnapshot) {
+          setPublishFrames(JSON.parse(JSON.stringify(step.publishFramesSnapshot)));
+        }
+        if (step.guidesSnapshot) {
+          setGuides(JSON.parse(JSON.stringify(step.guidesSnapshot)));
+        }
+        showShortcutFeedback(`Jumped to: ${step.title}`);
+      }
+    }
+  }, [history, showShortcutFeedback]);
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      restoreHistoryStep(historyIndex - 1);
+    }
+  }, [historyIndex, restoreHistoryStep]);
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      restoreHistoryStep(historyIndex + 1);
+    }
+  }, [historyIndex, history.length, restoreHistoryStep]);
+
+  const clearHistory = useCallback(() => {
+    if (history.length > 0) {
+      const current = history[historyIndex] || history[0];
+      setHistory([current]);
+      setHistoryIndex(0);
+      showShortcutFeedback('Cleared History Stack');
+    }
+  }, [history, historyIndex, showShortcutFeedback]);
+
+  const createSnapshot = useCallback((customTitle?: string) => {
+    pushHistoryStep(customTitle || `Checkpoint Snapshot (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`);
+    showShortcutFeedback('Created History Snapshot');
+  }, [pushHistoryStep, showShortcutFeedback]);
+
+  // Global Rulers & Guides system
+  const [guides, setGuides] = useState<Guide[]>(() => [
+    { id: 'guide-default-h1', type: 'horizontal', position: 150 },
+    { id: 'guide-default-v1', type: 'vertical', position: 200 },
+  ]);
+
+  const DEFAULT_SNAPPING_CONFIG: SnappingConfig = {
+    enabled: true,
+    snapToGuides: true,
+    snapToGrid: false,
+    snapToPixels: true,
+    snapToObjects: true,
+    snapToDocBounds: true,
+    tolerance: 8,
+    gridSize: 20,
+  };
+
+  const [snappingConfig, setSnappingConfig] = useState<SnappingConfig>(() => {
+    try {
+      const saved = localStorage.getItem('suiza_snapping_config');
+      if (saved) return { ...DEFAULT_SNAPPING_CONFIG, ...JSON.parse(saved) };
+    } catch {
+      // fallback
+    }
+    return DEFAULT_SNAPPING_CONFIG;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('suiza_snapping_config', JSON.stringify(snappingConfig));
+    } catch {
+      // ignore
+    }
+  }, [snappingConfig]);
+
+  const updateSnappingConfig = useCallback((updates: Partial<SnappingConfig>) => {
+    setSnappingConfig(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const toggleSnapping = useCallback(() => {
+    setSnappingConfig(prev => {
+      const nextEnabled = !prev.enabled;
+      showShortcutFeedback(nextEnabled ? 'Magnetic Snapping ON' : 'Snapping OFF');
+      return { ...prev, enabled: nextEnabled };
+    });
+  }, [showShortcutFeedback]);
+
+  const snapToGuides = snappingConfig.enabled && snappingConfig.snapToGuides;
+  const setSnapToGuides = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    setSnappingConfig(prev => {
+      const nextVal = typeof val === 'function' ? val(prev.snapToGuides) : val;
+      return { ...prev, snapToGuides: nextVal, enabled: nextVal ? true : prev.enabled };
+    });
+  }, []);
+
+  const [lockGuides, setLockGuides] = useState(false);
+
+  const addGuide = useCallback((type: 'horizontal' | 'vertical', position: number) => {
+    const newGuide: Guide = {
+      id: `guide-${type[0]}-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+      type,
+      position: Math.round(position),
+    };
+    setGuides(prev => [...prev, newGuide]);
+    showShortcutFeedback(`Added ${type} guide at ${Math.round(position)}px`);
+    return newGuide;
+  }, [showShortcutFeedback]);
+
+  const updateGuide = useCallback((id: string, position: number) => {
+    setGuides(prev => prev.map(g => g.id === id ? { ...g, position: Math.round(position) } : g));
+  }, []);
+
+  const removeGuide = useCallback((id: string) => {
+    setGuides(prev => prev.filter(g => g.id !== id));
+    showShortcutFeedback('Removed Guide');
+  }, [showShortcutFeedback]);
+
+  const clearGuides = useCallback(() => {
+    setGuides([]);
+    showShortcutFeedback('Cleared all guides');
+  }, [showShortcutFeedback]);
 
   // Persona switcher
   const setPersona = useCallback((newPersona: StudioPersona) => {
@@ -768,6 +989,7 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     },
     {
       id: 'v-shape-text-4',
+      name: 'Suiza Vector Typo',
       type: 'text',
       x: 100,
       y: 60,
@@ -778,6 +1000,8 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       strokeWidth: 0,
       text: 'Suiza Vector Artboard',
       fontSize: 32,
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight: '700',
     },
   ]);
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>(['v-shape-rect-1']);
@@ -824,7 +1048,7 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       y: 220,
       width: 275,
       height: 420,
-      content: 'Early modernist publications understood that legibility is a moral imperative. By aligning column gutters to golden ratios, the eye glides across prose with effortless velocity.\n\nThis editorial layout demonstrates InDesign-grade multi-column text flow with automated optical kerning, proportional leading, and non-destructive bleed geometry.',
+      content: 'Early modernist publications understood that legibility is a moral imperative. By aligning column gutters to golden ratios, the eye glides across prose with effortless velocity.\n\nThis editorial layout demonstrates publication-grade multi-column text flow with automated optical kerning, proportional leading, and non-destructive bleed geometry.',
     },
     {
       id: 'pub-pic-1',
@@ -862,8 +1086,103 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [publishTextWrapMode, setPublishTextWrapMode] = useState<'none' | 'box' | 'contour' | 'jump'>('box');
   const [publishParagraphStyle, setPublishParagraphStyle] = useState('Body Text');
 
+  // Sync Refs for History Snapshots
+  useEffect(() => { guidesRef.current = guides; }, [guides]);
+  useEffect(() => { vectorShapesRef.current = vectorShapes; }, [vectorShapes]);
+  useEffect(() => { publishFramesRef.current = publishFrames; }, [publishFrames]);
+
   // Photo multi-selection
   const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([]);
+
+  // Swatches & Custom Palettes State
+  const [palettes, setPalettes] = useState<SwatchPalette[]>(() => {
+    try {
+      const saved = localStorage.getItem('suiza_swatch_palettes');
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return DEFAULT_PALETTES;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('suiza_swatch_palettes', JSON.stringify(palettes));
+    } catch (_) {}
+  }, [palettes]);
+
+  const addSwatch = useCallback((paletteId: string, swatchData: Omit<ColorSwatch, 'id'>) => {
+    const newSwatch: ColorSwatch = {
+      ...swatchData,
+      id: `sw-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+    };
+    setPalettes(prev => prev.map(p => p.id === paletteId ? {
+      ...p,
+      swatches: [...p.swatches, newSwatch]
+    } : p));
+    showShortcutFeedback(`Added Swatch: ${newSwatch.name}`);
+    return newSwatch;
+  }, [showShortcutFeedback]);
+
+  const removeSwatch = useCallback((paletteId: string, swatchId: string) => {
+    setPalettes(prev => prev.map(p => p.id === paletteId ? {
+      ...p,
+      swatches: p.swatches.filter(s => s.id !== swatchId)
+    } : p));
+    showShortcutFeedback('Deleted Swatch');
+  }, [showShortcutFeedback]);
+
+  const createPalette = useCallback((name: string, description?: string) => {
+    const newPalette: SwatchPalette = {
+      id: `palette-${Date.now()}`,
+      name: name.trim() || 'Custom Palette',
+      description,
+      swatches: [],
+    };
+    setPalettes(prev => [...prev, newPalette]);
+    showShortcutFeedback(`Created Palette: ${newPalette.name}`);
+    return newPalette;
+  }, [showShortcutFeedback]);
+
+  const deletePalette = useCallback((paletteId: string) => {
+    setPalettes(prev => prev.filter(p => p.id !== paletteId));
+    showShortcutFeedback('Deleted Palette');
+  }, [showShortcutFeedback]);
+
+  const applySwatchToSelection = useCallback((color: string, target: 'fill' | 'stroke' | 'text' = 'fill') => {
+    if (persona === 'vector') {
+      if (target === 'fill') {
+        setVectorFill(color);
+        updateSelectedVectorShapes({ fill: color });
+      } else if (target === 'stroke') {
+        setVectorStroke(color);
+        updateSelectedVectorShapes({ stroke: color });
+      } else if (target === 'text') {
+        updateSelectedVectorShapes({ fill: color });
+      }
+      pushHistoryStep(`Apply ${target.toUpperCase()} Swatch: ${color}`);
+      showShortcutFeedback(`Applied ${target} color: ${color}`);
+    } else if (persona === 'publish') {
+      if (target === 'fill') {
+        updateSelectedPublishFrames({ fill: color });
+      } else if (target === 'stroke') {
+        updateSelectedPublishFrames({ fill: color });
+      } else if (target === 'text') {
+        updateSelectedPublishFrames({ fill: color });
+      }
+      pushHistoryStep(`Apply ${target.toUpperCase()} Swatch: ${color}`);
+      showShortcutFeedback(`Applied to frame: ${color}`);
+    } else if (persona === 'photo') {
+      setForegroundColor(color);
+      if (selectedLayer && selectedLayer.type === 'text') {
+        setProject(prev => ({
+          ...prev,
+          layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textColor: color } : l),
+          updatedAt: Date.now(),
+        }));
+      }
+      pushHistoryStep(`Apply Color Swatch: ${color}`);
+      showShortcutFeedback(`Set Foreground: ${color}`);
+    }
+  }, [persona, setVectorFill, setVectorStroke, updateSelectedVectorShapes, updateSelectedPublishFrames, setForegroundColor, selectedLayer, pushHistoryStep, showShortcutFeedback]);
 
   // Selection & Grouping Actions
   const groupSelectedObjects = useCallback(() => {
@@ -989,10 +1308,13 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       });
       showShortcutFeedback('Bring Forward (Ctrl+])');
     } else if (selectedLayer) {
-      moveLayer(selectedLayer.id, 'up');
-      showShortcutFeedback('Bring Layer Forward (Ctrl+])');
+      const idx = project.layers.findIndex(l => l.id === selectedLayer.id);
+      if (idx < project.layers.length - 1) {
+        moveLayer(idx, idx + 1);
+        showShortcutFeedback('Bring Layer Forward (Ctrl+])');
+      }
     }
-  }, [persona, selectedShapeIds, selectedFrameIds, selectedLayer, moveLayer, showShortcutFeedback]);
+  }, [persona, selectedShapeIds, selectedFrameIds, selectedLayer, project.layers, moveLayer, showShortcutFeedback]);
 
   const sendBackward = useCallback(() => {
     if (persona === 'vector') {
@@ -1020,10 +1342,13 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       });
       showShortcutFeedback('Send Backward (Ctrl+[)');
     } else if (selectedLayer) {
-      moveLayer(selectedLayer.id, 'down');
-      showShortcutFeedback('Send Layer Backward (Ctrl+[)');
+      const idx = project.layers.findIndex(l => l.id === selectedLayer.id);
+      if (idx > 0) {
+        moveLayer(idx, idx - 1);
+        showShortcutFeedback('Send Layer Backward (Ctrl+[)');
+      }
     }
-  }, [persona, selectedShapeIds, selectedFrameIds, selectedLayer, moveLayer, showShortcutFeedback]);
+  }, [persona, selectedShapeIds, selectedFrameIds, selectedLayer, project.layers, moveLayer, showShortcutFeedback]);
 
   const bringToFront = useCallback(() => {
     if (persona === 'vector') {
@@ -1347,6 +1672,10 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             case 'layer-bringtofront': bringToFront(); break;
             case 'layer-sendtoback': sendToBack(); break;
             case 'view-guides': setShowGuides(g => !g); break;
+            case 'view-snap': setSnapToGuides(s => !s); break;
+            case 'view-lockguides': setLockGuides(l => !l); break;
+            case 'window-character': setActiveDockTab('typography'); setDockCollapsed(false); break;
+            case 'window-dock-toggle': setDockCollapsed(prev => !prev); break;
             case 'view-grid': setShowGrid(g => !g); break;
             case 'view-zoomin': setZoom(z => Math.min(32, z * 1.25)); break;
             case 'view-zoomout': setZoom(z => Math.max(0.1, z / 1.25)); break;
@@ -1469,12 +1798,35 @@ export const StudioProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setShowGuides,
         showGrid,
         setShowGrid,
+        guides,
+        setGuides,
+        addGuide,
+        updateGuide,
+        removeGuide,
+        clearGuides,
+        snapToGuides,
+        setSnapToGuides,
+        snappingConfig,
+        setSnappingConfig,
+        updateSnappingConfig,
+        toggleSnapping,
+        lockGuides,
+        setLockGuides,
         history,
         historyIndex,
         undo,
         redo,
         pushHistoryStep,
         restoreHistoryStep,
+        clearHistory,
+        createSnapshot,
+        palettes,
+        setPalettes,
+        addSwatch,
+        removeSwatch,
+        createPalette,
+        deletePalette,
+        applySwatchToSelection,
         activeModal,
         setActiveModal,
         dockCollapsed,

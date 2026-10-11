@@ -26,7 +26,14 @@ import {
   Sun,
   Contrast,
   SlidersHorizontal,
+  Magnet,
+  Lock,
+  Unlock,
+  Ruler,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
+import { FONT_FAMILIES } from '../panels/TypographyPanel';
 
 export const OptionBar: React.FC = () => {
   const {
@@ -36,6 +43,16 @@ export const OptionBar: React.FC = () => {
     setToolOption,
     theme,
     foregroundColor,
+    setForegroundColor,
+    selectedLayer,
+    setProject,
+    vectorShapes,
+    selectedShapeIds,
+    updateSelectedVectorShapes,
+    pushHistoryStep,
+    setActiveDockTab,
+    setDockCollapsed,
+    activeDockTab,
     vectorFill,
     setVectorFill,
     vectorStroke,
@@ -59,7 +76,19 @@ export const OptionBar: React.FC = () => {
     setPublishTextWrapMode,
     showShortcutFeedback,
     addAdjustmentLayer,
+    showRulers,
+    setShowRulers,
+    showGuides,
+    setShowGuides,
+    guides,
+    snapToGuides,
+    setSnapToGuides,
+    lockGuides,
+    setLockGuides,
   } = useStudio();
+
+  // Active vector text shape if any
+  const activeVectorText = vectorShapes.find(s => selectedShapeIds.includes(s.id) && s.type === 'text');
 
   const sliderTrackClass = theme.isLight ? 'bg-slate-300' : 'bg-black/40';
   const boxBg = theme.isLight ? '#ffffff' : 'rgba(0, 0, 0, 0.4)';
@@ -155,6 +184,160 @@ export const OptionBar: React.FC = () => {
             </div>
           )}
 
+          {/* Photo Text / Typography Tool Options */}
+          {(activeTool === 'text' || (selectedLayer && selectedLayer.type === 'text')) && (
+            <div className="flex items-center gap-2">
+              {/* Font Family selector */}
+              <div className="flex items-center gap-1">
+                <Type className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                <select
+                  value={selectedLayer?.type === 'text' ? (selectedLayer.textFontFamily || 'Plus Jakarta Sans') : (toolOptions.fontFamily || 'Plus Jakarta Sans')}
+                  onChange={e => {
+                    const f = e.target.value;
+                    setToolOption('fontFamily', f);
+                    if (selectedLayer && selectedLayer.type === 'text') {
+                      setProject(prev => ({
+                        ...prev,
+                        layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textFontFamily: f } : l),
+                        updatedAt: Date.now(),
+                      }));
+                      pushHistoryStep(`Change Font: ${f}`);
+                    }
+                    showShortcutFeedback(`Font: ${f}`);
+                  }}
+                  className="px-2 py-0.5 rounded border text-xs font-semibold cursor-pointer max-w-[135px] truncate"
+                  style={{ backgroundColor: boxBg, borderColor: theme.borderStrong, color: theme.textPrimary }}
+                >
+                  {FONT_FAMILIES.map(item => (
+                    <option key={item.name} value={item.name} style={{ fontFamily: item.font }}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Font Weight */}
+              <select
+                value={selectedLayer?.type === 'text' ? (selectedLayer.textFontWeight || '400') : '400'}
+                onChange={e => {
+                  const w = e.target.value;
+                  setToolOption('fontWeight', w);
+                  if (selectedLayer && selectedLayer.type === 'text') {
+                    setProject(prev => ({
+                      ...prev,
+                      layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textFontWeight: w } : l),
+                      updatedAt: Date.now(),
+                    }));
+                    pushHistoryStep(`Set Weight: ${w}`);
+                  }
+                }}
+                className="px-1.5 py-0.5 rounded border text-[11px] font-medium cursor-pointer"
+                style={{ backgroundColor: boxBg, borderColor: theme.borderStrong, color: theme.textPrimary }}
+              >
+                <option value="300">Light</option>
+                <option value="400">Regular</option>
+                <option value="500">Medium</option>
+                <option value="600">SemiBold</option>
+                <option value="700">Bold</option>
+                <option value="900">Black</option>
+              </select>
+
+              {/* Font Size */}
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-semibold" style={{ color: theme.textSecondary }}>Size:</span>
+                <input
+                  type="number"
+                  min="6"
+                  max="256"
+                  value={selectedLayer?.type === 'text' ? (selectedLayer.textFontSize || 36) : (toolOptions.fontSize || 36)}
+                  onChange={e => {
+                    const s = parseInt(e.target.value) || 12;
+                    setToolOption('fontSize', s);
+                    if (selectedLayer && selectedLayer.type === 'text') {
+                      setProject(prev => ({
+                        ...prev,
+                        layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textFontSize: s } : l),
+                        updatedAt: Date.now(),
+                      }));
+                    }
+                  }}
+                  className="w-12 px-1 py-0.5 rounded border text-[11px] font-mono font-bold text-center"
+                  style={{ backgroundColor: boxBg, borderColor: theme.borderStrong, color: theme.textPrimary }}
+                />
+                <span className="text-[10px]" style={{ color: theme.textSecondary }}>pt</span>
+              </div>
+
+              {/* Color Swatch */}
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-semibold" style={{ color: theme.textSecondary }}>Color:</span>
+                <div className="relative w-5 h-5 rounded border overflow-hidden cursor-pointer" style={{ borderColor: theme.borderStrong }}>
+                  <input
+                    type="color"
+                    value={selectedLayer?.type === 'text' && selectedLayer.textColor ? selectedLayer.textColor : foregroundColor}
+                    onChange={e => {
+                      const c = e.target.value;
+                      setForegroundColor(c);
+                      setToolOption('textColor', c);
+                      if (selectedLayer && selectedLayer.type === 'text') {
+                        setProject(prev => ({
+                          ...prev,
+                          layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textColor: c } : l),
+                          updatedAt: Date.now(),
+                        }));
+                        pushHistoryStep(`Text Color: ${c}`);
+                      }
+                    }}
+                    className="w-full h-full cursor-pointer opacity-0 absolute inset-0"
+                  />
+                  <div
+                    className="w-full h-full"
+                    style={{ backgroundColor: selectedLayer?.type === 'text' && selectedLayer.textColor ? selectedLayer.textColor : foregroundColor }}
+                  />
+                </div>
+              </div>
+
+              {/* Alignment */}
+              <div className="flex items-center gap-0.5 p-0.5 rounded border" style={{ backgroundColor: boxBg, borderColor: theme.border }}>
+                {(['left', 'center', 'right'] as const).map(align => (
+                  <button
+                    key={align}
+                    onClick={() => {
+                      if (selectedLayer && selectedLayer.type === 'text') {
+                        setProject(prev => ({
+                          ...prev,
+                          layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textAlign: align } : l),
+                          updatedAt: Date.now(),
+                        }));
+                        pushHistoryStep(`Align: ${align}`);
+                      }
+                    }}
+                    className={`p-1 rounded transition-colors ${
+                      selectedLayer?.type === 'text' && selectedLayer.textAlign === align
+                        ? 'bg-[#0d99ff] text-white shadow-xs'
+                        : 'hover:bg-black/10 dark:hover:bg-white/10'
+                    }`}
+                    title={`Align ${align}`}
+                  >
+                    {align === 'left' ? <AlignLeft className="w-3 h-3" /> : align === 'center' ? <AlignCenter className="w-3 h-3" /> : <AlignRight className="w-3 h-3" />}
+                  </button>
+                ))}
+              </div>
+
+              {/* Open Character Panel Button */}
+              <button
+                onClick={() => {
+                  setActiveDockTab('typography');
+                  setDockCollapsed(false);
+                }}
+                className="px-2 py-0.5 rounded border text-[10px] font-bold flex items-center gap-1 bg-[#0d99ff]/10 text-sky-500 border-sky-400 hover:bg-[#0d99ff] hover:text-white transition-colors"
+                title="Open Character & Font Palette in Dock"
+              >
+                <Type className="w-3 h-3" />
+                <span>Character Panel</span>
+              </button>
+            </div>
+          )}
+
           {/* Marquee Options */}
           {activeTool === 'marquee' && (
             <div className="flex items-center gap-3">
@@ -220,6 +403,115 @@ export const OptionBar: React.FC = () => {
           >
             <span>Vector: {activeTool.replace('-', ' ')}</span>
           </div>
+
+          {/* Vector Text / Typography Tool Options */}
+          {(activeTool === 'text' || activeVectorText) && (
+            <div className="flex items-center gap-2 pr-2 border-r" style={{ borderColor: theme.border }}>
+              {/* Font Family selector */}
+              <div className="flex items-center gap-1">
+                <Type className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                <select
+                  value={activeVectorText?.fontFamily || toolOptions.fontFamily || 'Plus Jakarta Sans'}
+                  onChange={e => {
+                    const f = e.target.value;
+                    setToolOption('fontFamily', f);
+                    if (activeVectorText) {
+                      updateSelectedVectorShapes({ fontFamily: f });
+                      pushHistoryStep(`Change Font: ${f}`);
+                    }
+                    showShortcutFeedback(`Font: ${f}`);
+                  }}
+                  className="px-2 py-0.5 rounded border text-xs font-semibold cursor-pointer max-w-[135px] truncate"
+                  style={{ backgroundColor: boxBg, borderColor: theme.borderStrong, color: theme.textPrimary }}
+                >
+                  {FONT_FAMILIES.map(item => (
+                    <option key={item.name} value={item.name} style={{ fontFamily: item.font }}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Font Weight */}
+              <select
+                value={activeVectorText?.fontWeight || toolOptions.fontWeight || 'bold'}
+                onChange={e => {
+                  const w = e.target.value;
+                  setToolOption('fontWeight', w);
+                  if (activeVectorText) {
+                    updateSelectedVectorShapes({ fontWeight: w });
+                    pushHistoryStep(`Set Weight: ${w}`);
+                  }
+                }}
+                className="px-1.5 py-0.5 rounded border text-[11px] font-medium cursor-pointer"
+                style={{ backgroundColor: boxBg, borderColor: theme.borderStrong, color: theme.textPrimary }}
+              >
+                <option value="300">Light</option>
+                <option value="400">Regular</option>
+                <option value="500">Medium</option>
+                <option value="600">SemiBold</option>
+                <option value="700">Bold</option>
+                <option value="900">Black</option>
+              </select>
+
+              {/* Font Size */}
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-semibold" style={{ color: theme.textSecondary }}>Size:</span>
+                <input
+                  type="number"
+                  min="6"
+                  max="256"
+                  value={activeVectorText?.fontSize || toolOptions.fontSize || 36}
+                  onChange={e => {
+                    const s = parseInt(e.target.value) || 12;
+                    setToolOption('fontSize', s);
+                    if (activeVectorText) {
+                      updateSelectedVectorShapes({ fontSize: s });
+                    }
+                  }}
+                  className="w-12 px-1 py-0.5 rounded border text-[11px] font-mono font-bold text-center"
+                  style={{ backgroundColor: boxBg, borderColor: theme.borderStrong, color: theme.textPrimary }}
+                />
+                <span className="text-[10px]" style={{ color: theme.textSecondary }}>pt</span>
+              </div>
+
+              {/* Alignment */}
+              <div className="flex items-center gap-0.5 p-0.5 rounded border" style={{ backgroundColor: boxBg, borderColor: theme.border }}>
+                {(['left', 'center', 'right'] as const).map(align => (
+                  <button
+                    key={align}
+                    onClick={() => {
+                      if (activeVectorText) {
+                        updateSelectedVectorShapes({ textAlign: align });
+                        pushHistoryStep(`Align: ${align}`);
+                      }
+                    }}
+                    className={`p-1 rounded transition-colors ${
+                      activeVectorText?.textAlign === align
+                        ? 'bg-[#0d99ff] text-white shadow-xs'
+                        : 'hover:bg-black/10 dark:hover:bg-white/10'
+                    }`}
+                    title={`Align ${align}`}
+                  >
+                    {align === 'left' ? <AlignLeft className="w-3 h-3" /> : align === 'center' ? <AlignCenter className="w-3 h-3" /> : <AlignRight className="w-3 h-3" />}
+                  </button>
+                ))}
+              </div>
+
+              {/* Open Character Panel Button */}
+              <button
+                onClick={() => {
+                  setActiveDockTab('typography');
+                  setDockCollapsed(false);
+                }}
+                className="px-2 py-0.5 rounded border text-[10px] font-bold flex items-center gap-1 bg-[#0d99ff]/10 text-sky-500 border-sky-400 hover:bg-[#0d99ff] hover:text-white transition-colors"
+                title="Open Character & Font Palette in Dock"
+              >
+                <Type className="w-3 h-3" />
+                <span>Character Panel</span>
+              </button>
+            </div>
+          )}
 
           {/* Fill swatch */}
           <div className="flex items-center gap-1.5">
@@ -458,9 +750,92 @@ export const OptionBar: React.FC = () => {
         </div>
       )}
 
-      {/* Right side: Snap & Guide quick toggles */}
-      <div className="flex items-center gap-2 pl-3 shrink-0">
-        <span className="text-[10px] font-mono opacity-60">Snap: 100%</span>
+      {/* Right side: Precision Rulers, Guides & Magnetic Snapping Quick HUD */}
+      <div className="flex items-center gap-1 pl-3 shrink-0 border-l" style={{ borderColor: theme.border }}>
+        {/* Character / Font Palette Toggle */}
+        <button
+          onClick={() => {
+            setActiveDockTab('typography');
+            setDockCollapsed(false);
+            showShortcutFeedback('Opened Character Palette');
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1 transition-colors ${
+            activeDockTab === 'typography'
+              ? 'bg-[#0d99ff] text-white shadow-xs'
+              : 'hover:bg-black/5 dark:hover:bg-white/10 opacity-80'
+          }`}
+          title="Open Character & Font Palette"
+        >
+          <Type className="w-3.5 h-3.5 text-sky-400" />
+          <span>Character</span>
+        </button>
+
+        {/* Toggle Rulers */}
+        <button
+          onClick={() => {
+            setShowRulers(r => !r);
+            showShortcutFeedback(showRulers ? 'Hidden Rulers' : 'Shown Rulers');
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1 transition-colors ${
+            showRulers
+              ? theme.isLight ? 'bg-sky-100 text-sky-800 border border-sky-300' : 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+              : 'hover:bg-black/5 dark:hover:bg-white/10 opacity-70'
+          }`}
+          title="Toggle Rulers (Ctrl+R / ⌘R)"
+        >
+          <Ruler className="w-3.5 h-3.5" />
+          <span>Rulers</span>
+        </button>
+
+        {/* Toggle Guides */}
+        <button
+          onClick={() => {
+            setShowGuides(g => !g);
+            showShortcutFeedback(showGuides ? 'Hidden Guides' : 'Shown Guides');
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1 transition-colors ${
+            showGuides
+              ? theme.isLight ? 'bg-cyan-100 text-cyan-800 border border-cyan-300' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+              : 'hover:bg-black/5 dark:hover:bg-white/10 opacity-70'
+          }`}
+          title="Toggle Guides (Ctrl+; / ⌘;)"
+        >
+          {showGuides ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          <span>Guides ({guides.length})</span>
+        </button>
+
+        {/* Toggle Magnetic Snapping */}
+        <button
+          onClick={() => {
+            setSnapToGuides(s => !s);
+            showShortcutFeedback(snapToGuides ? 'Snapping OFF' : 'Magnetic Snapping ON');
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1 transition-colors ${
+            snapToGuides
+              ? theme.isLight ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              : 'hover:bg-black/5 dark:hover:bg-white/10 opacity-70'
+          }`}
+          title="Toggle Magnetic Snapping (Shift+Ctrl+; / ⇧⌘;)"
+        >
+          <Magnet className={`w-3.5 h-3.5 ${snapToGuides ? 'text-amber-500' : ''}`} />
+          <span>Snap</span>
+        </button>
+
+        {/* Toggle Lock Guides */}
+        <button
+          onClick={() => {
+            setLockGuides(l => !l);
+            showShortcutFeedback(lockGuides ? 'Guides Unlocked' : 'Guides Locked');
+          }}
+          className={`p-1 rounded transition-colors ${
+            lockGuides
+              ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+              : 'hover:bg-black/5 dark:hover:bg-white/10 opacity-70'
+          }`}
+          title={lockGuides ? 'Guides are Locked (Alt+Ctrl+; / ⌥⌘;)' : 'Lock Guides (Alt+Ctrl+; / ⌥⌘;)'}
+        >
+          {lockGuides ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+        </button>
       </div>
     </div>
   );

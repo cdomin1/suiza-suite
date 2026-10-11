@@ -21,7 +21,7 @@ import {
 export const LinuxNativeModal: React.FC = () => {
   const { setActiveModal, theme, showShortcutFeedback } = useStudio();
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'architecture' | 'packaging' | 'color-wacom' | 'adobe-migration'>('architecture');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'packaging' | 'color-wacom' | 'pro-interchange'>('architecture');
   const [tabletTestPressure, setTabletTestPressure] = useState(0.85);
 
   const copyToClipboard = (text: string, label: string) => {
@@ -63,7 +63,7 @@ export const LinuxNativeModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs" style={{ color: theme.textSecondary }}>
-                Breaking the Adobe CC stranglehold on creative professionals through first-class Linux deployment
+                Breaking proprietary suite lock-in on creative professionals through first-class Linux deployment
               </p>
             </div>
           </div>
@@ -121,16 +121,16 @@ export const LinuxNativeModal: React.FC = () => {
             <span>Wayland, Color & Wacom</span>
           </button>
           <button
-            onClick={() => setActiveTab('adobe-migration')}
+            onClick={() => setActiveTab('pro-interchange')}
             className={`px-3 py-2.5 border-b-2 transition-all flex items-center gap-1.5 ${
-              activeTab === 'adobe-migration'
+              activeTab === 'pro-interchange'
                 ? 'border-[#0d99ff] text-[#0d99ff] font-bold'
                 : 'border-transparent hover:text-slate-900 dark:hover:text-white'
             }`}
-            style={{ color: activeTab === 'adobe-migration' ? undefined : theme.textSecondary }}
+            style={{ color: activeTab === 'pro-interchange' ? undefined : theme.textSecondary }}
           >
             <FileCheck className="w-3.5 h-3.5" />
-            <span>Adobe File Interchange</span>
+            <span>Industry File Interchange</span>
           </button>
         </div>
 
@@ -148,14 +148,14 @@ export const LinuxNativeModal: React.FC = () => {
               >
                 <div className="font-bold text-sm text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>The Problem: Adobe's Grip on the Creative Community</span>
+                  <span>The Problem: Proprietary Lock-In on the Creative Community</span>
                 </div>
                 <p style={{ color: theme.textSecondary }}>
                   Millions of designers, photographers, illustrators, and layout artists would switch to Linux overnight if they had a unified, pro-tier creative suite.
-                  Previously, Linux forced users to stitch together GIMP (awkward UI, historic lack of CMYK / non-destructive adjustment layers), Inkscape (standalone vector with distinct shortcuts), and Scribus (separate desktop publishing).
+                  Previously, Linux forced users to stitch together disparate standalone tools with conflicting shortcuts and fragmented color workflows.
                 </p>
                 <p className="font-semibold text-slate-900 dark:text-white">
-                  Suiza-Suite solves this at the root: one integrated suite combining <span className="text-[#0d99ff]">Suiza-Photo</span>, <span className="text-[#f59e0b]">Suiza-Vector</span>, and <span className="text-[#ec4899]">Suiza-Publish</span> with identical professional hotkeys, shared layer hierarchy, non-destructive GPU compute, and pristine native Linux desktop integration.
+                  SUIZA Atelier solves this at the root: one integrated suite combining <span className="text-[#0d99ff]">Suiza-Photo</span>, <span className="text-[#f59e0b]">Suiza-Vector</span>, and <span className="text-[#ec4899]">Suiza-Publish</span> with unified professional hotkeys, shared layer hierarchy, non-destructive GPU compute, and pristine native Linux desktop integration.
                 </p>
               </div>
 
@@ -316,7 +316,7 @@ export const LinuxNativeModal: React.FC = () => {
                   <div className="space-y-1 font-mono text-[10px]">
                     <div className="flex justify-between py-1 border-b border-black/10 dark:border-white/10">
                       <span>Working Profile:</span>
-                      <span className="text-[#0d99ff] font-bold">Adobe RGB (1998) D65</span>
+                      <span className="text-[#0d99ff] font-bold">Wide-Gamut RGB (1998) D65</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-black/10 dark:border-white/10">
                       <span>Print Profile:</span>
@@ -373,18 +373,18 @@ export const LinuxNativeModal: React.FC = () => {
                 <div className="font-bold text-slate-900 dark:text-white">Zero Fractional Scaling Blur on High-DPI Displays</div>
                 <p style={{ color: theme.textSecondary }}>
                   Legacy creative apps on Linux running through X11 or XWayland suffer severe blurring at 125%, 150%, or 175% desktop fractional scale.
-                  Suiza-Suite uses native Wayland buffer rendering at the true physical device pixel ratio, delivering pinpoint retina sharpness on 4K & 5K creative workstations.
+                  SUIZA Atelier uses native Wayland buffer rendering at the true physical device pixel ratio, delivering pinpoint retina sharpness on 4K & 5K creative workstations.
                 </p>
               </div>
             </div>
           )}
 
-          {/* TAB 4: ADOBE INTERCHANGE */}
-          {activeTab === 'adobe-migration' && (
+          {/* TAB 4: INDUSTRY INTERCHANGE */}
+          {activeTab === 'pro-interchange' && (
             <div className="space-y-4">
               <p style={{ color: theme.textSecondary }}>
-                The true obstacle to leaving Windows and macOS has never been hardware—it is file compatibility with clients and agencies entrenched in the Adobe ecosystem.
-                Suiza-Suite supports seamless bi-directional file interchange:
+                The true obstacle to leaving legacy operating systems has never been hardware—it is universal file compatibility with external studios and clients.
+                SUIZA Atelier uses the unified native <span className="font-mono text-sky-400 font-bold">.szt</span> format across Mac, Windows, and Linux, plus open industry interchange:
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -393,11 +393,11 @@ export const LinuxNativeModal: React.FC = () => {
                   style={{ backgroundColor: theme.isLight ? '#ffffff' : 'rgba(0,0,0,0.3)', borderColor: theme.border }}
                 >
                   <div className="font-bold flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
-                    <span className="font-mono text-xs">.PSD</span>
-                    <span>Photoshop CC Layer Stacks</span>
+                    <span className="font-mono text-xs">.SZT / Layers</span>
+                    <span>Multi-Layer Raster Document Stacks</span>
                   </div>
                   <p className="text-[11px]" style={{ color: theme.textSecondary }}>
-                    Imports and exports Photoshop multi-layer files with 8-bit, 16-bit, and 32-bit floating point depth, layer masks, and blend modes intact.
+                    Imports and exports multi-layer raster document packages with 8-bit, 16-bit, and 32-bit floating point depth, layer masks, and blend modes intact.
                   </p>
                 </div>
 
@@ -406,11 +406,11 @@ export const LinuxNativeModal: React.FC = () => {
                   style={{ backgroundColor: theme.isLight ? '#ffffff' : 'rgba(0,0,0,0.3)', borderColor: theme.border }}
                 >
                   <div className="font-bold flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                    <span className="font-mono text-xs">.AI / .SVG</span>
-                    <span>Illustrator Bézier Vectors</span>
+                    <span className="font-mono text-xs">.SZT / SVG</span>
+                    <span>PostScript & Scalable Bézier Vectors</span>
                   </div>
                   <p className="text-[11px]" style={{ color: theme.textSecondary }}>
-                    Native parser for Adobe Illustrator PDF stream vectors, SVG 2.0 with mesh gradients, and Inkscape XML subpaths.
+                    Native parser for vector PDF stream vectors, SVG 2.0 with mesh gradients, and standard XML subpaths.
                   </p>
                 </div>
 
@@ -419,11 +419,11 @@ export const LinuxNativeModal: React.FC = () => {
                   style={{ backgroundColor: theme.isLight ? '#ffffff' : 'rgba(0,0,0,0.3)', borderColor: theme.border }}
                 >
                   <div className="font-bold flex items-center gap-1.5 text-pink-600 dark:text-pink-400">
-                    <span className="font-mono text-xs">.IDML</span>
-                    <span>InDesign Markup Packages</span>
+                    <span className="font-mono text-xs">.SZT / Spreads</span>
+                    <span>Universal Publication Layout Packages</span>
                   </div>
                   <p className="text-[11px]" style={{ color: theme.textSecondary }}>
-                    Opens InDesign IDML packages with facing page spreads, master pages, text threads, paragraph styles, and bleed geometries preserved.
+                    Opens editorial layout packages with facing page spreads, master pages, text threads, paragraph styles, and bleed geometries preserved.
                   </p>
                 </div>
 

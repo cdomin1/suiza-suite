@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useStudio } from '../../context/StudioContext';
 import { Rulers } from './Rulers';
 import { mapBlendMode, drawPhotoshopCheckerboard } from '../../utils/canvasRenderer';
-import { VectorPoint, VectorShape, PublishFrame } from '../../types';
-import { Check, X, Crop, Plus, Sparkles, Upload, Image as ImageIcon } from 'lucide-react';
+import { VectorPoint, VectorShape, PublishFrame, Guide } from '../../types';
+import { Check, X, Crop, Plus, Sparkles, Upload, Image as ImageIcon, Magnet, Trash2 } from 'lucide-react';
 
 export const CanvasEngine: React.FC = () => {
   const {
@@ -23,6 +23,17 @@ export const CanvasEngine: React.FC = () => {
     showRulers,
     showGrid,
     showGuides,
+    setShowGuides,
+    guides,
+    setGuides,
+    addGuide,
+    updateGuide,
+    removeGuide,
+    clearGuides,
+    snapToGuides,
+    setSnapToGuides,
+    lockGuides,
+    setLockGuides,
     pushHistoryStep,
     theme,
     vectorShapes,
@@ -75,6 +86,41 @@ export const CanvasEngine: React.FC = () => {
   // Document dimensions by persona
   const docWidth = persona === 'publish' ? 1400 : persona === 'vector' ? 1200 : project.width;
   const docHeight = persona === 'publish' ? 780 : persona === 'vector' ? 800 : project.height;
+
+  // Global Guides & Magnetic Snapping Interactivity State
+  const [activeSnapGuide, setActiveSnapGuide] = useState<{ x?: number; y?: number; label?: string } | null>(null);
+  const [activeHoverGuideId, setActiveHoverGuideId] = useState<string | null>(null);
+  const [draggingCanvasGuide, setDraggingCanvasGuide] = useState<{ id: string; type: 'horizontal' | 'vertical'; initialPos: number } | null>(null);
+
+  // Memoized Magnetic Snapping targets from canvas elements
+  const magneticTargets = useMemo(() => {
+    const xs: number[] = [0, Math.round(docWidth / 2), docWidth];
+    const ys: number[] = [0, Math.round(docHeight / 2), docHeight];
+
+    // Collect boundaries from vector shapes
+    for (const s of vectorShapes) {
+      xs.push(s.x, Math.round(s.x + s.width / 2), s.x + s.width);
+      ys.push(s.y, Math.round(s.y + s.height / 2), s.y + s.height);
+    }
+
+    // Collect boundaries from publish frames
+    for (const f of publishFrames) {
+      xs.push(f.x, Math.round(f.x + f.width / 2), f.x + f.width);
+      ys.push(f.y, Math.round(f.y + f.height / 2), f.y + f.height);
+    }
+
+    // Collect boundaries from photo layers
+    for (const l of project.layers) {
+      if (l.x !== undefined && l.width !== undefined) {
+        xs.push(l.x, Math.round(l.x + l.width / 2), l.x + l.width);
+      }
+      if (l.y !== undefined && l.height !== undefined) {
+        ys.push(l.y, Math.round(l.y + l.height / 2), l.y + l.height);
+      }
+    }
+
+    return { x: xs, y: ys };
+  }, [docWidth, docHeight, vectorShapes, publishFrames, project.layers]);
 
   // Spacebar pan listener
   useEffect(() => {
@@ -248,9 +294,26 @@ export const CanvasEngine: React.FC = () => {
           ctx.fillStyle = `rgba(217, 119, 6, ${Math.max(0, intensity * 0.15)})`;
           ctx.fillRect(0, 0, docWidth, docHeight);
         } else if (layer.type === 'text') {
-          ctx.font = `${layer.textFontSize || 36}px ${layer.textFontFamily || 'sans-serif'}`;
+          const weight = layer.textFontWeight || 'normal';
+          const size = layer.textFontSize || 36;
+          const family = layer.textFontFamily ? `"${layer.textFontFamily}", sans-serif` : 'Plus Jakarta Sans, sans-serif';
+          ctx.font = `${weight} ${size}px ${family}`;
           ctx.fillStyle = layer.textColor || (theme.isLight ? '#0f172a' : '#ffffff');
-          ctx.fillText(layer.textContent || '', layer.x || 100, layer.y || 150);
+          ctx.textAlign = (layer.textAlign as CanvasTextAlign) || 'left';
+          ctx.textBaseline = 'top';
+
+          let textToRender = layer.textContent || 'Typography Layer';
+          if (layer.textTransform === 'uppercase') textToRender = textToRender.toUpperCase();
+          else if (layer.textTransform === 'lowercase') textToRender = textToRender.toLowerCase();
+
+          const lines = textToRender.split('\n');
+          const lineH = size * (layer.textLineHeight || 1.25);
+          const px = layer.x ?? 100;
+          const py = layer.y ?? 150;
+
+          lines.forEach((line, i) => {
+            ctx.fillText(line, px, py + i * lineH);
+          });
         }
 
         ctx.restore();
@@ -343,6 +406,7 @@ export const CanvasEngine: React.FC = () => {
 
       // Render vector shapes created by user
       for (const shape of vectorShapes) {
+        if (shape.visible === false) continue;
         ctx.save();
         ctx.fillStyle = shape.fill;
         ctx.strokeStyle = shape.stroke;
@@ -389,9 +453,32 @@ export const CanvasEngine: React.FC = () => {
           ctx.fill();
           if (shape.strokeWidth > 0) ctx.stroke();
         } else if (shape.type === 'text') {
-          ctx.font = `bold ${shape.fontSize || 36}px Inter, sans-serif`;
+          const weight = shape.fontWeight || 'bold';
+          const size = shape.fontSize || 36;
+          const family = shape.fontFamily ? `"${shape.fontFamily}", sans-serif` : 'Plus Jakarta Sans, sans-serif';
+          ctx.font = `${weight} ${size}px ${family}`;
           ctx.fillStyle = shape.fill || '#0f172a';
-          ctx.fillText(shape.text || 'Vector Typo', shape.x, shape.y + (shape.fontSize || 36));
+          ctx.textAlign = (shape.textAlign as CanvasTextAlign) || 'left';
+          ctx.textBaseline = 'top';
+
+          let textToRender = shape.text || 'Vector Typography';
+          if (shape.textTransform === 'uppercase') textToRender = textToRender.toUpperCase();
+          else if (shape.textTransform === 'lowercase') textToRender = textToRender.toLowerCase();
+
+          const lines = textToRender.split('\n');
+          const lineH = size * (shape.lineHeight || 1.25);
+
+          lines.forEach((line, i) => {
+            let px = shape.x;
+            if (shape.textAlign === 'center') px = shape.x + shape.width / 2;
+            else if (shape.textAlign === 'right') px = shape.x + shape.width;
+            ctx.fillText(line, px, shape.y + i * lineH);
+            if (shape.strokeWidth && shape.strokeWidth > 0 && shape.stroke && shape.stroke !== 'none') {
+              ctx.strokeStyle = shape.stroke;
+              ctx.lineWidth = shape.strokeWidth;
+              ctx.strokeText(line, px, shape.y + i * lineH);
+            }
+          });
         }
 
         // Bounding Box & 8 Anchor Points if Selected
@@ -588,6 +675,7 @@ export const CanvasEngine: React.FC = () => {
 
       // Render Publication Frames
       for (const frame of publishFrames) {
+        if (frame.visible === false) continue;
         ctx.save();
 
         if (frame.type === 'text') {
@@ -824,21 +912,26 @@ export const CanvasEngine: React.FC = () => {
       } else if (activeTool === 'text') {
         // Place text layer at clicked position
         const newLayerId = `layer-text-${Date.now()}`;
+        const defaultFont = toolOptions.fontFamily || 'Plus Jakarta Sans';
+        const defaultSize = toolOptions.fontSize || 44;
+        const defaultColor = toolOptions.textColor || foregroundColor;
         setProject(prev => ({
           ...prev,
           layers: [
             ...prev.layers,
             {
               id: newLayerId,
-              name: 'Text Layer',
+              name: `Type (${defaultFont})`,
               type: 'text',
               visible: true,
               locked: false,
               opacity: 100,
               blendMode: 'normal',
               textContent: 'Helvetica Swiss Typo',
-              textFontSize: 44,
-              textColor: foregroundColor,
+              textFontSize: defaultSize,
+              textFontFamily: defaultFont,
+              textFontWeight: toolOptions.fontWeight || 'bold',
+              textColor: defaultColor,
               x,
               y,
             }
@@ -846,7 +939,7 @@ export const CanvasEngine: React.FC = () => {
           selectedLayerId: newLayerId,
         }));
         pushHistoryStep('Create Text Layer');
-        showShortcutFeedback('Placed Text Layer on Canvas');
+        showShortcutFeedback(`Placed Text Layer (${defaultFont})`);
       }
     }
 
@@ -889,23 +982,29 @@ export const CanvasEngine: React.FC = () => {
         setDraftPoints(prev => [...prev, { x, y }]);
         showShortcutFeedback(`Added Bézier Anchor (${draftPoints.length + 1})`);
       } else if (activeTool === 'text') {
+        const defaultFont = toolOptions.fontFamily || 'Plus Jakarta Sans';
+        const defaultSize = toolOptions.fontSize || 36;
+        const defaultFill = toolOptions.textColor || vectorFill || '#0f172a';
         const newTextShape: VectorShape = {
           id: `v-text-${Date.now()}`,
+          name: `Type (${defaultFont})`,
           type: 'text',
           x,
           y,
-          width: 220,
-          height: 50,
-          fill: vectorFill || '#0f172a',
+          width: 260,
+          height: defaultSize * 1.5,
+          fill: defaultFill,
           stroke: 'none',
           strokeWidth: 0,
           text: 'Vector Typography',
-          fontSize: 32,
+          fontSize: defaultSize,
+          fontFamily: defaultFont,
+          fontWeight: toolOptions.fontWeight || 'bold',
         };
         setVectorShapes(prev => [...prev, newTextShape]);
         setSelectedShapeIds([newTextShape.id]);
         pushHistoryStep('Create Vector Text');
-        showShortcutFeedback('Placed Vector Typography');
+        showShortcutFeedback(`Placed Vector Typography (${defaultFont})`);
       } else if (activeTool === 'move' || activeTool === 'direct-select') {
         const hit = [...vectorShapes].reverse().find(s =>
           x >= s.x - 5 && x <= s.x + s.width + 5 && y >= s.y - 5 && y <= s.y + s.height + 5
@@ -1028,20 +1127,267 @@ export const CanvasEngine: React.FC = () => {
       });
     }
 
-    // Drag-moving selected vector shape(s) together as group
+    // Dragging an existing Guide directly on the canvas surface
+    if (draggingCanvasGuide) {
+      const guideId = draggingCanvasGuide.id;
+      const type = draggingCanvasGuide.type;
+      const rawPos = type === 'horizontal' ? y : x;
+
+      let snappedPos = Math.round(rawPos);
+      let snapLabel: string | undefined;
+
+      if (snapToGuides) {
+        const snapThreshold = Math.max(5, Math.min(20, 8 / zoom));
+        const maxBound = type === 'vertical' ? docWidth : docHeight;
+        const targets: { pos: number; label: string }[] = [
+          { pos: 0, label: type === 'vertical' ? 'Left Edge (0)' : 'Top Edge (0)' },
+          { pos: Math.round(maxBound / 2), label: 'Center (50%)' },
+          { pos: maxBound, label: type === 'vertical' ? `Right Edge (${maxBound}px)` : `Bottom Edge (${maxBound}px)` },
+        ];
+
+        for (const g of guides) {
+          if (g.id !== guideId && g.type === type) {
+            targets.push({ pos: g.position, label: `Guide ${g.position}px` });
+          }
+        }
+
+        const objTargets = type === 'vertical' ? magneticTargets.x : magneticTargets.y;
+        for (const t of objTargets) {
+          targets.push({ pos: t, label: `Object Boundary ${t}px` });
+        }
+
+        let minDiff = snapThreshold + 1;
+        for (const t of targets) {
+          const diff = Math.abs(rawPos - t.pos);
+          if (diff <= snapThreshold && diff < minDiff) {
+            minDiff = diff;
+            snappedPos = t.pos;
+            snapLabel = t.label;
+          }
+        }
+      }
+
+      updateGuide(guideId, snappedPos);
+      setActiveSnapGuide({
+        x: type === 'vertical' ? snappedPos : undefined,
+        y: type === 'horizontal' ? snappedPos : undefined,
+        label: snapLabel || `${type === 'vertical' ? 'X' : 'Y'}: ${snappedPos}px`,
+      });
+      return;
+    }
+
+    // Drag-moving selected vector shape(s) together as group with magnetic snapping
     if (persona === 'vector' && (activeTool === 'move' || activeTool === 'direct-select') && selectedShapeIds.length > 0 && !selectionBox) {
-      const dx = x - dragStart.x;
-      const dy = y - dragStart.y;
+      let dx = x - dragStart.x;
+      let dy = y - dragStart.y;
+
+      if (snapToGuides && showGuides) {
+        const selectedShapes = vectorShapes.filter(s => selectedShapeIds.includes(s.id));
+        if (selectedShapes.length > 0) {
+          const minX = Math.min(...selectedShapes.map(s => s.x));
+          const maxX = Math.max(...selectedShapes.map(s => s.x + s.width));
+          const minY = Math.min(...selectedShapes.map(s => s.y));
+          const maxY = Math.max(...selectedShapes.map(s => s.y + s.height));
+          const midX = (minX + maxX) / 2;
+          const midY = (minY + maxY) / 2;
+
+          const threshold = Math.max(5, Math.min(20, 8 / zoom));
+
+          // Snap X
+          const vTargets = [
+            0, Math.round(docWidth / 2), docWidth,
+            ...guides.filter(g => g.type === 'vertical').map(g => g.position),
+          ];
+          let bestDiffX: number | null = null;
+          let snapTargetX: number | undefined;
+          let snapLabelX: string | undefined;
+
+          for (const target of vTargets) {
+            for (const [diff, label] of [
+              [target - (minX + dx), 'Left Edge'],
+              [target - (midX + dx), 'Center'],
+              [target - (maxX + dx), 'Right Edge'],
+            ] as const) {
+              if (Math.abs(diff) <= threshold && (bestDiffX === null || Math.abs(diff) < Math.abs(bestDiffX))) {
+                bestDiffX = diff;
+                snapTargetX = target;
+                snapLabelX = `${label} snapped to ${target}px`;
+              }
+            }
+          }
+
+          if (bestDiffX !== null) {
+            dx += bestDiffX;
+          }
+
+          // Snap Y
+          const hTargets = [
+            0, Math.round(docHeight / 2), docHeight,
+            ...guides.filter(g => g.type === 'horizontal').map(g => g.position),
+          ];
+          let bestDiffY: number | null = null;
+          let snapTargetY: number | undefined;
+          let snapLabelY: string | undefined;
+
+          for (const target of hTargets) {
+            for (const [diff, label] of [
+              [target - (minY + dy), 'Top Edge'],
+              [target - (midY + dy), 'Middle'],
+              [target - (maxY + dy), 'Bottom Edge'],
+            ] as const) {
+              if (Math.abs(diff) <= threshold && (bestDiffY === null || Math.abs(diff) < Math.abs(bestDiffY))) {
+                bestDiffY = diff;
+                snapTargetY = target;
+                snapLabelY = `${label} snapped to ${target}px`;
+              }
+            }
+          }
+
+          if (bestDiffY !== null) {
+            dy += bestDiffY;
+          }
+
+          if (snapTargetX !== undefined || snapTargetY !== undefined) {
+            setActiveSnapGuide({
+              x: snapTargetX,
+              y: snapTargetY,
+              label: [snapLabelX, snapLabelY].filter(Boolean).join(' · '),
+            });
+          } else {
+            setActiveSnapGuide(null);
+          }
+        }
+      }
+
       setVectorShapes(prev => prev.map(s => selectedShapeIds.includes(s.id) ? { ...s, x: s.x + dx, y: s.y + dy } : s));
       setDragStart({ x, y });
     }
 
-    // Drag-moving selected publish frame(s) together as group
+    // Drag-moving selected publish frame(s) together as group with magnetic snapping
     if (persona === 'publish' && activeTool === 'move' && selectedFrameIds.length > 0 && !selectionBox) {
-      const dx = x - dragStart.x;
-      const dy = y - dragStart.y;
+      let dx = x - dragStart.x;
+      let dy = y - dragStart.y;
+
+      if (snapToGuides && showGuides) {
+        const selectedF = publishFrames.filter(f => selectedFrameIds.includes(f.id));
+        if (selectedF.length > 0) {
+          const minX = Math.min(...selectedF.map(f => f.x));
+          const maxX = Math.max(...selectedF.map(f => f.x + f.width));
+          const minY = Math.min(...selectedF.map(f => f.y));
+          const maxY = Math.max(...selectedF.map(f => f.y + f.height));
+          const midX = (minX + maxX) / 2;
+          const midY = (minY + maxY) / 2;
+
+          const threshold = Math.max(5, Math.min(20, 8 / zoom));
+
+          const vTargets = [
+            0, Math.round(docWidth / 2), docWidth,
+            ...guides.filter(g => g.type === 'vertical').map(g => g.position),
+          ];
+          let bestDiffX: number | null = null;
+          let snapTargetX: number | undefined;
+          let snapLabelX: string | undefined;
+
+          for (const target of vTargets) {
+            for (const [diff, label] of [
+              [target - (minX + dx), 'Left Edge'],
+              [target - (midX + dx), 'Center'],
+              [target - (maxX + dx), 'Right Edge'],
+            ] as const) {
+              if (Math.abs(diff) <= threshold && (bestDiffX === null || Math.abs(diff) < Math.abs(bestDiffX))) {
+                bestDiffX = diff;
+                snapTargetX = target;
+                snapLabelX = `${label} snapped to ${target}px`;
+              }
+            }
+          }
+
+          if (bestDiffX !== null) {
+            dx += bestDiffX;
+          }
+
+          const hTargets = [
+            0, Math.round(docHeight / 2), docHeight,
+            ...guides.filter(g => g.type === 'horizontal').map(g => g.position),
+          ];
+          let bestDiffY: number | null = null;
+          let snapTargetY: number | undefined;
+          let snapLabelY: string | undefined;
+
+          for (const target of hTargets) {
+            for (const [diff, label] of [
+              [target - (minY + dy), 'Top Edge'],
+              [target - (midY + dy), 'Middle'],
+              [target - (maxY + dy), 'Bottom Edge'],
+            ] as const) {
+              if (Math.abs(diff) <= threshold && (bestDiffY === null || Math.abs(diff) < Math.abs(bestDiffY))) {
+                bestDiffY = diff;
+                snapTargetY = target;
+                snapLabelY = `${label} snapped to ${target}px`;
+              }
+            }
+          }
+
+          if (bestDiffY !== null) {
+            dy += bestDiffY;
+          }
+
+          if (snapTargetX !== undefined || snapTargetY !== undefined) {
+            setActiveSnapGuide({
+              x: snapTargetX,
+              y: snapTargetY,
+              label: [snapLabelX, snapLabelY].filter(Boolean).join(' · '),
+            });
+          } else {
+            setActiveSnapGuide(null);
+          }
+        }
+      }
+
       setPublishFrames(prev => prev.map(f => selectedFrameIds.includes(f.id) ? { ...f, x: f.x + dx, y: f.y + dy } : f));
       setDragStart({ x, y });
+    }
+
+    // Drag-moving selected photo layer with magnetic snapping
+    if (persona === 'photo' && activeTool === 'move' && !selectionBox && project.selectedLayerId) {
+      const activeLayer = project.layers.find(l => l.id === project.selectedLayerId);
+      if (activeLayer && (activeLayer.x !== undefined || activeLayer.type === 'text')) {
+        let dx = x - dragStart.x;
+        let dy = y - dragStart.y;
+        const curX = activeLayer.x || 0;
+        const curY = activeLayer.y || 0;
+        const curW = activeLayer.width || 200;
+        const curH = activeLayer.height || 50;
+
+        if (snapToGuides && showGuides) {
+          const threshold = Math.max(5, Math.min(20, 8 / zoom));
+          const vTargets = [0, Math.round(docWidth / 2), docWidth, ...guides.filter(g => g.type === 'vertical').map(g => g.position)];
+          const hTargets = [0, Math.round(docHeight / 2), docHeight, ...guides.filter(g => g.type === 'horizontal').map(g => g.position)];
+
+          for (const target of vTargets) {
+            for (const diff of [target - (curX + dx), target - (curX + curW / 2 + dx), target - (curX + curW + dx)]) {
+              if (Math.abs(diff) <= threshold) {
+                dx += diff;
+                break;
+              }
+            }
+          }
+          for (const target of hTargets) {
+            for (const diff of [target - (curY + dy), target - (curY + curH / 2 + dy), target - (curY + curH + dy)]) {
+              if (Math.abs(diff) <= threshold) {
+                dy += diff;
+                break;
+              }
+            }
+          }
+        }
+
+        setProject(prev => ({
+          ...prev,
+          layers: prev.layers.map(l => l.id === activeLayer.id ? { ...l, x: (l.x || 0) + dx, y: (l.y || 0) + dy } : l),
+        }));
+        setDragStart({ x, y });
+      }
     }
   };
 
@@ -1049,6 +1395,27 @@ export const CanvasEngine: React.FC = () => {
     if (!isMouseDown) return;
     setIsMouseDown(false);
     setLastPoint(null);
+    setActiveSnapGuide(null);
+
+    // Finalize dragging existing guide directly on canvas
+    if (draggingCanvasGuide) {
+      const guide = guides.find(g => g.id === draggingCanvasGuide.id);
+      if (guide) {
+        // If dragged completely outside canvas area (e.g. into negative pasteboard or past margins), delete
+        const isOffCanvas = guide.type === 'horizontal'
+          ? (guide.position < -50 || guide.position > docHeight + 50)
+          : (guide.position < -50 || guide.position > docWidth + 50);
+
+        if (isOffCanvas) {
+          removeGuide(guide.id);
+          showShortcutFeedback('Guide Deleted (Dragged off canvas)');
+        } else {
+          showShortcutFeedback(`Guide Set: ${guide.type === 'horizontal' ? 'Y' : 'X'} ${guide.position}px`);
+        }
+      }
+      setDraggingCanvasGuide(null);
+      return;
+    }
 
     // Finalize Photo drawing stroke to active layer
     if (persona === 'photo' && (activeTool === 'brush' || activeTool === 'eraser' || activeTool === 'healing')) {
@@ -1202,7 +1569,7 @@ export const CanvasEngine: React.FC = () => {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Precision Rulers */}
+      {/* Precision Interactive Rulers */}
       {showRulers && (
         <Rulers
           zoom={zoom}
@@ -1212,6 +1579,21 @@ export const CanvasEngine: React.FC = () => {
           docHeight={docHeight}
           cursorX={mousePos.x}
           cursorY={mousePos.y}
+          containerRef={containerRef}
+          canvasRef={canvasRef}
+          guides={guides}
+          onAddGuide={addGuide}
+          onUpdateGuide={updateGuide}
+          onRemoveGuide={removeGuide}
+          onClearGuides={clearGuides}
+          snapToGuides={snapToGuides}
+          setSnapToGuides={setSnapToGuides}
+          lockGuides={lockGuides}
+          setLockGuides={setLockGuides}
+          showGuides={showGuides}
+          setShowGuides={setShowGuides}
+          clientToDocCoords={clientToDocCoords}
+          magneticTargets={magneticTargets}
         />
       )}
 
@@ -1272,6 +1654,86 @@ export const CanvasEngine: React.FC = () => {
               imageRendering: zoom > 2 ? 'pixelated' : 'auto',
             }}
           />
+
+          {/* Global Interactive Guides Overlay */}
+          {showGuides && guides.map(g => (
+            <div
+              key={g.id}
+              className={`absolute group pointer-events-auto select-none transition-colors ${
+                g.type === 'horizontal' ? 'left-0 right-0 h-px cursor-row-resize' : 'top-0 bottom-0 w-px cursor-col-resize'
+              }`}
+              style={{
+                top: g.type === 'horizontal' ? `${g.position}px` : 0,
+                left: g.type === 'vertical' ? `${g.position}px` : 0,
+                backgroundColor: activeHoverGuideId === g.id || draggingCanvasGuide?.id === g.id ? '#f43f5e' : '#00e5ff',
+                boxShadow: activeHoverGuideId === g.id || draggingCanvasGuide?.id === g.id ? '0 0 6px #f43f5e' : '0 0 4px #00e5ff',
+                zIndex: 25,
+              }}
+              onMouseEnter={() => setActiveHoverGuideId(g.id)}
+              onMouseLeave={() => setActiveHoverGuideId(prev => prev === g.id ? null : prev)}
+              onMouseDown={e => {
+                e.stopPropagation();
+                if (lockGuides) {
+                  showShortcutFeedback('Guides are Locked');
+                  return;
+                }
+                setIsMouseDown(true);
+                setDraggingCanvasGuide({
+                  id: g.id,
+                  type: g.type,
+                  initialPos: g.position,
+                });
+              }}
+              onContextMenu={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                removeGuide(g.id);
+                showShortcutFeedback('Removed Guide');
+              }}
+              title={`${g.type === 'horizontal' ? 'Horizontal' : 'Vertical'} Guide at ${g.position}px (Drag to move, Right-click to delete)`}
+            >
+              {/* Invisible Expanded Hit Area */}
+              <div
+                className={`absolute ${
+                  g.type === 'horizontal' ? '-top-2 -bottom-2 inset-x-0' : '-left-2 -right-2 inset-y-0'
+                }`}
+              />
+              {/* Hover Position Pill */}
+              <div
+                className={`absolute px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-900/90 text-cyan-300 border border-cyan-400 shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30 ${
+                  g.type === 'horizontal' ? 'left-2 -top-5' : 'top-2 -left-6'
+                }`}
+              >
+                {g.type === 'horizontal' ? `Y: ${g.position}px` : `X: ${g.position}px`}
+              </div>
+            </div>
+          ))}
+
+          {/* Active Magnetic Snapping Feedback Line & Pill */}
+          {activeSnapGuide && (
+            <>
+              {activeSnapGuide.x !== undefined && (
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-rose-500 shadow-[0_0_8px_#f43f5e] z-30 pointer-events-none animate-pulse"
+                  style={{ left: `${activeSnapGuide.x}px` }}
+                />
+              )}
+              {activeSnapGuide.y !== undefined && (
+                <div
+                  className="absolute left-0 right-0 h-px bg-rose-500 shadow-[0_0_8px_#f43f5e] z-30 pointer-events-none animate-pulse"
+                  style={{ top: `${activeSnapGuide.y}px` }}
+                />
+              )}
+              {activeSnapGuide.label && (
+                <div
+                  className="absolute bottom-4 right-4 bg-slate-900/95 border border-rose-500 text-white px-2.5 py-1 rounded shadow-2xl flex items-center gap-1.5 text-[11px] font-mono font-bold z-40 pointer-events-none animate-in fade-in"
+                >
+                  <Magnet className="w-3.5 h-3.5 text-rose-400" />
+                  <span>{activeSnapGuide.label}</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 

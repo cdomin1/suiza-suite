@@ -9,7 +9,7 @@ export const ExportModal: React.FC = () => {
     setActiveModal,
   } = useStudio();
 
-  const [format, setFormat] = useState<'png' | 'jpg' | 'webp' | 'svg' | 'pdf' | 'psd' | 'tiff'>('png');
+  const [format, setFormat] = useState<'png' | 'jpg' | 'webp' | 'svg' | 'pdf' | 'szt' | 'tiff'>('png');
   const [scale, setScale] = useState<number>(2); // 2x default high-res
   const [quality, setQuality] = useState<number>(95);
   const [dpi, setDpi] = useState<number>(300);
@@ -26,44 +26,53 @@ export const ExportModal: React.FC = () => {
     setIsExporting(true);
 
     setTimeout(() => {
-      // Create offscreen canvas rendered at target scale
-      const offscreen = document.createElement('canvas');
-      offscreen.width = exportWidth;
-      offscreen.height = exportHeight;
-      const ctx = offscreen.getContext('2d');
-
-      if (ctx) {
-        ctx.scale(scale, scale);
-        // Fill canvas
-        ctx.fillStyle = '#1e1e24';
-        ctx.fillRect(0, 0, project.width, project.height);
-
-        // Composite layers
-        for (const layer of project.layers) {
-          if (!layer.visible) continue;
-          ctx.save();
-          ctx.globalAlpha = layer.opacity / 100;
-          if (layer.canvasDataUrl) {
-            const img = new Image();
-            img.src = layer.canvasDataUrl;
-            ctx.drawImage(img, 0, 0, project.width, project.height);
-          }
-          if (layer.textContent) {
-            ctx.fillStyle = layer.textColor || '#ffffff';
-            ctx.font = `600 ${layer.textFontSize || 32}px ${layer.textFontFamily || 'Plus Jakarta Sans'}`;
-            ctx.fillText(layer.textContent, layer.x || 100, layer.y || 100);
-          }
-          ctx.restore();
-        }
-
-        // Trigger file download
-        const mime = format === 'jpg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
-        const dataUrl = offscreen.toDataURL(mime, quality / 100);
+      if (format === 'szt') {
+        const sztBlob = new Blob([JSON.stringify({ app: 'SUIZA Atelier', version: '1.0', format: 'szt', project, timestamp: Date.now() }, null, 2)], { type: 'application/json' });
         const link = document.createElement('a');
-        const ext = format;
-        link.download = `${project.name.replace('.suiza', '')}_${dpi}dpi_@${scale}x.${ext}`;
-        link.href = dataUrl;
+        link.download = `${project.name.replace(/\.(szt|suiza|psd|ai|indd)$/i, '')}.szt`;
+        link.href = URL.createObjectURL(sztBlob);
         link.click();
+        URL.revokeObjectURL(link.href);
+      } else {
+        // Create offscreen canvas rendered at target scale
+        const offscreen = document.createElement('canvas');
+        offscreen.width = exportWidth;
+        offscreen.height = exportHeight;
+        const ctx = offscreen.getContext('2d');
+
+        if (ctx) {
+          ctx.scale(scale, scale);
+          // Fill canvas
+          ctx.fillStyle = '#1e1e24';
+          ctx.fillRect(0, 0, project.width, project.height);
+
+          // Composite layers
+          for (const layer of project.layers) {
+            if (!layer.visible) continue;
+            ctx.save();
+            ctx.globalAlpha = layer.opacity / 100;
+            if (layer.canvasDataUrl) {
+              const img = new Image();
+              img.src = layer.canvasDataUrl;
+              ctx.drawImage(img, 0, 0, project.width, project.height);
+            }
+            if (layer.textContent) {
+              ctx.fillStyle = layer.textColor || '#ffffff';
+              ctx.font = `600 ${layer.textFontSize || 32}px ${layer.textFontFamily || 'Plus Jakarta Sans'}`;
+              ctx.fillText(layer.textContent, layer.x || 100, layer.y || 100);
+            }
+            ctx.restore();
+          }
+
+          // Trigger file download
+          const mime = format === 'jpg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
+          const dataUrl = offscreen.toDataURL(mime, quality / 100);
+          const link = document.createElement('a');
+          const ext = format;
+          link.download = `${project.name.replace(/\.(szt|suiza|psd|ai|indd)$/i, '')}_${dpi}dpi_@${scale}x.${ext}`;
+          link.href = dataUrl;
+          link.click();
+        }
       }
 
       setIsExporting(false);

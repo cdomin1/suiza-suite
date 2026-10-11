@@ -34,9 +34,9 @@ export type ToolId =
   | 'line-tool'
   | 'page-tool';
 
-export type PhotoDockTab = 'layers' | 'adjustments' | 'channels' | 'history' | 'ai';
-export type VectorDockTab = 'pathfinder' | 'swatches' | 'stroke' | 'transform' | 'layers';
-export type PublishDockTab = 'pages' | 'typography' | 'layout' | 'preflight' | 'wrap';
+export type PhotoDockTab = 'layers' | 'typography' | 'swatches' | 'adjustments' | 'properties' | 'history' | 'ai';
+export type VectorDockTab = 'layers' | 'typography' | 'swatches' | 'stroke' | 'pathfinder' | 'properties' | 'history';
+export type PublishDockTab = 'pages' | 'typography' | 'swatches' | 'wrap' | 'properties' | 'preflight' | 'layers' | 'history';
 export type DockTabId = PhotoDockTab | VectorDockTab | PublishDockTab;
 
 export type BlendMode =
@@ -82,6 +82,13 @@ export interface Layer {
   textFontSize?: number;
   textFontFamily?: string;
   textColor?: string;
+  textFontWeight?: string;
+  textLetterSpacing?: number;
+  textLineHeight?: number;
+  textAlign?: 'left' | 'center' | 'right';
+  textTransform?: 'none' | 'uppercase' | 'lowercase';
+  fontStyle?: 'normal' | 'italic';
+  textDecoration?: 'none' | 'underline' | 'line-through';
   x?: number;
   y?: number;
   width?: number;
@@ -118,6 +125,13 @@ export interface VectorShape {
   text?: string;
   fontSize?: number;
   fontFamily?: string;
+  fontWeight?: string;
+  letterSpacing?: number;
+  lineHeight?: number;
+  textAlign?: 'left' | 'center' | 'right';
+  textTransform?: 'none' | 'uppercase' | 'lowercase';
+  fontStyle?: 'normal' | 'italic';
+  textDecoration?: 'none' | 'underline' | 'line-through';
   rotation?: number;
   opacity?: number;
   groupId?: string;
@@ -150,6 +164,26 @@ export interface PublishFrame {
   children?: PublishFrame[];
   visible?: boolean;
   locked?: boolean;
+}
+
+export interface Guide {
+  id: string;
+  type: 'horizontal' | 'vertical';
+  position: number; // document coordinate (x for vertical, y for horizontal)
+  locked?: boolean;
+  color?: string;
+  name?: string;
+}
+
+export interface SnappingConfig {
+  enabled: boolean;          // Master snapping on/off
+  snapToGuides: boolean;     // Align to layout guides
+  snapToGrid: boolean;       // Align to grid intervals
+  snapToPixels: boolean;     // Align to exact integer pixel boundaries
+  snapToObjects: boolean;    // Align to other object edges & centers (smart guides)
+  snapToDocBounds: boolean;  // Align to document bounds (margins/center/edges)
+  tolerance: number;         // Snap sensitivity / threshold in px (default 8)
+  gridSize: number;          // Grid interval in px (default 20)
 }
 
 export interface VectorPath {
@@ -191,6 +225,7 @@ export interface DocumentProject {
     inside: number;
     outside: number;
   };
+  guides?: Guide[];
   createdAt: number;
   updatedAt: number;
 }
@@ -239,9 +274,33 @@ export interface PluginExtension {
   memorySafetyVerified: boolean;
 }
 
+export interface ColorSwatch {
+  id: string;
+  name: string;
+  color: string;
+  type?: 'solid' | 'gradient';
+  gradientType?: 'linear' | 'radial';
+  gradientAngle?: number;
+  gradientStops?: { offset: number; color: string }[];
+  isNone?: boolean;
+  category?: string;
+  isFavorite?: boolean;
+}
+
+export interface SwatchPalette {
+  id: string;
+  name: string;
+  description?: string;
+  swatches: ColorSwatch[];
+}
+
 export interface HistoryStep {
   id: string;
   title: string;
   timestamp: number;
-  layersSnapshot: Layer[];
+  persona?: StudioPersona;
+  layersSnapshot?: Layer[];
+  vectorShapesSnapshot?: VectorShape[];
+  publishFramesSnapshot?: PublishFrame[];
+  guidesSnapshot?: Guide[];
 }

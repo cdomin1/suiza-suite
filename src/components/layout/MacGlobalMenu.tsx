@@ -37,6 +37,14 @@ export const MacGlobalMenu: React.FC = () => {
     resetViewport,
     showRulers,
     setShowRulers,
+    showGuides,
+    setShowGuides,
+    guides,
+    snapToGuides,
+    setSnapToGuides,
+    lockGuides,
+    setLockGuides,
+    clearGuides,
     showGrid,
     setShowGrid,
     addLayer,
@@ -50,6 +58,18 @@ export const MacGlobalMenu: React.FC = () => {
     osMode,
     setOsMode,
     showShortcutFeedback,
+    activeDockTab,
+    setActiveDockTab,
+    dockCollapsed,
+    setDockCollapsed,
+    toolOptions,
+    setToolOption,
+    selectedLayer,
+    setProject,
+    vectorShapes,
+    selectedShapeIds,
+    updateSelectedVectorShapes,
+    pushHistoryStep,
   } = useStudio();
 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -128,7 +148,7 @@ export const MacGlobalMenu: React.FC = () => {
               title="Linux Workstation Architecture & Flatpak Deploy"
             >
               <span>🐧</span>
-              <span className="font-semibold">Suiza-Suite</span>
+              <span className="font-semibold">SUIZA Atelier</span>
             </button>
           </div>
         ) : (
@@ -172,7 +192,7 @@ export const MacGlobalMenu: React.FC = () => {
                   }}
                   className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center transition-colors font-medium"
                 >
-                  <span>Switch to {macActiveApp === 'suiza' ? 'Finder' : 'Suiza-Suite'}</span>
+                  <span>Switch to {macActiveApp === 'suiza' ? 'Finder' : 'SUIZA Atelier'}</span>
                   <span className="text-[10px] opacity-70">⌘Tab</span>
                 </button>
                 <div className="my-1 border-t" style={{ borderColor: theme.border }} />
@@ -201,10 +221,10 @@ export const MacGlobalMenu: React.FC = () => {
         )}
 
         {/* ===================================================================
-            APP FOCUS STATE: SUIZA-SUITE vs FINDER
+            APP FOCUS STATE: SUIZA ATELIER vs FINDER
             =================================================================== */}
         {macActiveApp === 'suiza' ? (
-          /* Active App: Suiza-Suite */
+          /* Active App: SUIZA Atelier */
           <>
             <div className="relative">
               <button
@@ -213,7 +233,7 @@ export const MacGlobalMenu: React.FC = () => {
                   activeMenu === 'suiza-app' ? 'bg-[#0d99ff] text-white' : 'hover:bg-black/10 dark:hover:bg-white/10'
                 }`}
               >
-                <span>Suiza-Suite</span>
+                <span>SUIZA Atelier</span>
               </button>
               {activeMenu === 'suiza-app' && (
                 <div
@@ -224,7 +244,7 @@ export const MacGlobalMenu: React.FC = () => {
                     onClick={() => { setActiveModal('rust-arch'); setActiveMenu(null); }}
                     className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white transition-colors font-bold"
                   >
-                    About Suiza-Suite (Safe Rust Edition)
+                    About SUIZA Atelier (Safe Rust Edition)
                   </button>
                   <div className="my-1 border-t" style={{ borderColor: theme.border }} />
                   <button
@@ -249,7 +269,7 @@ export const MacGlobalMenu: React.FC = () => {
                     }}
                     className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center transition-colors"
                   >
-                    <span>Hide Suiza-Suite (Go to Finder)</span>
+                    <span>Hide SUIZA Atelier (Go to Finder)</span>
                     <span className="text-[10px] opacity-70 font-mono">⌘H</span>
                   </button>
                   <button
@@ -469,19 +489,277 @@ export const MacGlobalMenu: React.FC = () => {
                           className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
                         >
                           <span>Show Rulers</span>
-                          <span>{showRulers ? '✓' : ''}</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-[10px] opacity-70 font-mono">⌘R</span>
+                            <span>{showRulers ? '✓' : ''}</span>
+                          </span>
                         </button>
+                        <button
+                          onClick={() => { setShowGuides(g => !g); setActiveMenu(null); }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Show Guides</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-[10px] opacity-70 font-mono">⌘;</span>
+                            <span>{showGuides ? '✓' : ''}</span>
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => { setSnapToGuides(s => !s); setActiveMenu(null); }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Snap to Guides</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-[10px] opacity-70 font-mono">⇧⌘;</span>
+                            <span>{snapToGuides ? '✓' : ''}</span>
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => { setLockGuides(l => !l); setActiveMenu(null); }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Lock Guides</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-[10px] opacity-70 font-mono">⌥⌘;</span>
+                            <span>{lockGuides ? '✓' : ''}</span>
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => { clearGuides(); setActiveMenu(null); }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-rose-500 hover:text-white text-rose-500 flex justify-between items-center transition-colors"
+                        >
+                          <span>Clear All Guides</span>
+                          <span className="text-[10px] opacity-70 font-mono">({guides.length})</span>
+                        </button>
+                        <div className="my-1 border-t" style={{ borderColor: theme.border }} />
                         <button
                           onClick={() => { setShowGrid(g => !g); setActiveMenu(null); }}
                           className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
                         >
                           <span>Show Pixel Grid</span>
-                          <span>{showGrid ? '✓' : ''}</span>
+                          <span className="flex items-center gap-2">
+                            <span className="text-[10px] opacity-70 font-mono">⌘'</span>
+                            <span>{showGrid ? '✓' : ''}</span>
+                          </span>
                         </button>
                       </>
                     )}
 
-                    {['Type', 'Select', 'Filter', 'Window', 'Help'].includes(item) && (
+                    {item === 'Type' && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setActiveDockTab('typography');
+                            setDockCollapsed(false);
+                            setActiveMenu(null);
+                            showShortcutFeedback('Opened Character Palette');
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center font-bold"
+                        >
+                          <span>Character & Typography Palette...</span>
+                          <span className="text-[10px] opacity-70 font-mono">⌘T</span>
+                        </button>
+                        <div className="my-1 border-t" style={{ borderColor: theme.border }} />
+
+                        <div className="px-3 py-1 text-[10px] font-bold tracking-wider opacity-70">FONT FAMILIES</div>
+                        {['Plus Jakarta Sans', 'Inter', 'Roboto', 'Montserrat', 'Playfair Display', 'JetBrains Mono', 'Oswald', 'Dancing Script'].map(fName => (
+                          <button
+                            key={fName}
+                            onClick={() => {
+                              setToolOption('fontFamily', fName);
+                              if (persona === 'vector') {
+                                updateSelectedVectorShapes({ fontFamily: fName });
+                              } else if (persona === 'photo' && selectedLayer && selectedLayer.type === 'text') {
+                                setProject(prev => ({
+                                  ...prev,
+                                  layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textFontFamily: fName } : l),
+                                }));
+                              }
+                              pushHistoryStep(`Font: ${fName}`);
+                              showShortcutFeedback(`Font: ${fName}`);
+                              setActiveMenu(null);
+                            }}
+                            className="w-full text-left px-3 py-1 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                          >
+                            <span>{fName}</span>
+                            {toolOptions.fontFamily === fName && <span>✓</span>}
+                          </button>
+                        ))}
+
+                        <div className="my-1 border-t" style={{ borderColor: theme.border }} />
+                        <div className="px-3 py-1 text-[10px] font-bold tracking-wider opacity-70">SIZE</div>
+                        <div className="flex items-center gap-1 px-3 py-1">
+                          {[12, 18, 24, 36, 48, 72].map(sz => (
+                            <button
+                              key={sz}
+                              onClick={() => {
+                                setToolOption('fontSize', sz);
+                                if (persona === 'vector') {
+                                  updateSelectedVectorShapes({ fontSize: sz });
+                                } else if (persona === 'photo' && selectedLayer && selectedLayer.type === 'text') {
+                                  setProject(prev => ({
+                                    ...prev,
+                                    layers: prev.layers.map(l => l.id === selectedLayer.id ? { ...l, textFontSize: sz } : l),
+                                  }));
+                                }
+                                setActiveMenu(null);
+                              }}
+                              className="px-1.5 py-0.5 rounded border text-[10px] font-mono hover:bg-[#0d99ff] hover:text-white"
+                              style={{ borderColor: theme.border }}
+                            >
+                              {sz}pt
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {item === 'Window' && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setActiveDockTab('typography');
+                            setDockCollapsed(false);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Character & Fonts</span>
+                          <span>{activeDockTab === 'typography' && !dockCollapsed ? '✓' : ''}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveDockTab('layers');
+                            setDockCollapsed(false);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Layers</span>
+                          <span>{activeDockTab === 'layers' && !dockCollapsed ? '✓' : ''}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveDockTab('swatches');
+                            setDockCollapsed(false);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Swatches & Colors</span>
+                          <span>{activeDockTab === 'swatches' && !dockCollapsed ? '✓' : ''}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveDockTab('history');
+                            setDockCollapsed(false);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>History</span>
+                          <span>{activeDockTab === 'history' && !dockCollapsed ? '✓' : ''}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveDockTab('properties');
+                            setDockCollapsed(false);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Properties & Transform</span>
+                          <span>{activeDockTab === 'properties' && !dockCollapsed ? '✓' : ''}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveDockTab('adjustments');
+                            setDockCollapsed(false);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>Adjustments</span>
+                          <span>{activeDockTab === 'adjustments' && !dockCollapsed ? '✓' : ''}</span>
+                        </button>
+                        {persona === 'vector' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setActiveDockTab('pathfinder');
+                                setDockCollapsed(false);
+                                setActiveMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                            >
+                              <span>Pathfinder & Boolean</span>
+                              <span>{activeDockTab === 'pathfinder' && !dockCollapsed ? '✓' : ''}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveDockTab('stroke');
+                                setDockCollapsed(false);
+                                setActiveMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                            >
+                              <span>Stroke & Appearance</span>
+                              <span>{activeDockTab === 'stroke' && !dockCollapsed ? '✓' : ''}</span>
+                            </button>
+                          </>
+                        )}
+                        {persona === 'publish' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setActiveDockTab('pages');
+                                setDockCollapsed(false);
+                                setActiveMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                            >
+                              <span>Pages & Spreads</span>
+                              <span>{activeDockTab === 'pages' && !dockCollapsed ? '✓' : ''}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveDockTab('wrap');
+                                setDockCollapsed(false);
+                                setActiveMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                            >
+                              <span>Text Wrap</span>
+                              <span>{activeDockTab === 'wrap' && !dockCollapsed ? '✓' : ''}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveDockTab('preflight');
+                                setDockCollapsed(false);
+                                setActiveMenu(null);
+                              }}
+                              className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                            >
+                              <span>Preflight & Output</span>
+                              <span>{activeDockTab === 'preflight' && !dockCollapsed ? '✓' : ''}</span>
+                            </button>
+                          </>
+                        )}
+                        <div className="my-1 border-t" style={{ borderColor: theme.border }} />
+                        <button
+                          onClick={() => {
+                            setDockCollapsed(!dockCollapsed);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-[#0d99ff] hover:text-white flex justify-between items-center"
+                        >
+                          <span>{dockCollapsed ? 'Show Docking Panel' : 'Hide Docking Panel'}</span>
+                          <span className="text-[10px] opacity-70 font-mono">Tab</span>
+                        </button>
+                      </>
+                    )}
+
+                    {['Select', 'Filter', 'Help'].includes(item) && (
                       <div className="px-3 py-2 text-xs" style={{ color: theme.textSecondary }}>
                         <div className="font-semibold mb-1">{item} Operations</div>
                         <div className="text-[11px] opacity-80">Full actions available for {persona} persona.</div>

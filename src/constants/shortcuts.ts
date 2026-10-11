@@ -34,7 +34,7 @@ export const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
   { id: 'edit-delete', name: 'Delete Selection', category: 'Edit', key: 'Delete', description: 'Delete selected objects or layers' },
   { id: 'edit-shortcuts', name: 'Remap Shortcuts', category: 'Edit', key: 'k', ctrl: true, description: 'Open keyboard shortcuts dialog' },
 
-  // Object / Layer Arrangement & Grouping (Adobe CC Standard)
+  // Object / Layer Arrangement & Grouping (Studio Professional Standard)
   { id: 'object-group', name: 'Group Selection', category: 'Layer', key: 'g', ctrl: true, description: 'Group selected objects or layers' },
   { id: 'object-ungroup', name: 'Ungroup', category: 'Layer', key: 'g', ctrl: true, shift: true, description: 'Ungroup selected group' },
   { id: 'layer-bringforward', name: 'Bring Forward', category: 'Layer', key: ']', ctrl: true, description: 'Move layer or shape up one level' },
@@ -51,18 +51,23 @@ export const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
   { id: 'view-actual', name: 'Actual Pixels (100%)', category: 'View', key: '1', ctrl: true, description: 'View 1:1 hardware pixel ratio' },
   { id: 'view-rulers', name: 'Toggle Rulers', category: 'View', key: 'r', ctrl: true, description: 'Show or hide horizontal/vertical rulers' },
   { id: 'view-guides', name: 'Toggle Guides', category: 'View', key: ';', ctrl: true, description: 'Show or hide layout guides' },
+  { id: 'view-snap', name: 'Toggle Snapping', category: 'View', key: ';', ctrl: true, shift: true, description: 'Enable or disable precision snapping system' },
+  { id: 'view-lockguides', name: 'Lock Guides', category: 'View', key: ';', ctrl: true, alt: true, description: 'Lock guides to prevent movement or deletion' },
+  { id: 'window-character', name: 'Character & Font Palette', category: 'View', key: 't', ctrl: true, alt: true, description: 'Open character and typography dock palette' },
   { id: 'view-grid', name: 'Toggle Grid', category: 'View', key: "'", ctrl: true, description: 'Show or hide pixel grid' },
+  { id: 'window-dock-toggle', name: 'Toggle Studio Dock', category: 'View', key: '\\', ctrl: true, description: 'Collapse or expand the studio panel dock' },
+  { id: 'window-dock-split', name: 'Toggle Dual Stacked Dock', category: 'View', key: 'd', ctrl: true, alt: true, description: 'Split studio dock into upper and lower stacked panels' },
 
   // Studio Personas
-  { id: 'persona-photo', name: 'Switch to Suiza-Photo', category: 'Studio', key: '1', alt: true, description: 'Raster photo manipulation persona' },
-  { id: 'persona-vector', name: 'Switch to Suiza-Vector', category: 'Studio', key: '2', alt: true, description: 'Vector illustration persona' },
-  { id: 'persona-publish', name: 'Switch to Suiza-Publish', category: 'Studio', key: '3', alt: true, description: 'Desktop publishing persona' },
+  { id: 'persona-photo', name: 'Switch to SUIZA Photo', category: 'Studio', key: '1', alt: true, description: 'Raster photo manipulation persona' },
+  { id: 'persona-vector', name: 'Switch to SUIZA Vector', category: 'Studio', key: '2', alt: true, description: 'Vector illustration persona' },
+  { id: 'persona-publish', name: 'Switch to SUIZA Publish', category: 'Studio', key: '3', alt: true, description: 'Desktop publishing persona' },
 ];
 
 export const THEMES = [
   {
     id: 'dark-cc' as const,
-    name: 'Adobe Dark CC',
+    name: 'Studio Dark Pro',
     isLight: false,
     bgMain: '#1e1e1e',
     bgPanel: '#252526',

@@ -132,7 +132,7 @@ export const PropertiesPanel: React.FC = () => {
             </div>
           </div>
 
-          {/* Alignment Tools (Adobe Illustrator Standard) */}
+          {/* Precision Alignment Tools */}
           <div className="space-y-2">
             <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: theme.textSecondary }}>
               Align Objects

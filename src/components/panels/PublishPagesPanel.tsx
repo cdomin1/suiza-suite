@@ -16,7 +16,7 @@ interface SpreadItem {
   parentMaster: string;
 }
 
-const INDESIGN_SPREADS: SpreadItem[] = [
+const DEFAULT_SPREADS: SpreadItem[] = [
   {
     index: 0,
     label: 'Page 1',
@@ -51,7 +51,7 @@ export const PublishPagesPanel: React.FC = () => {
     pushHistoryStep,
   } = useStudio();
 
-  const [spreads, setSpreads] = React.useState<SpreadItem[]>(INDESIGN_SPREADS);
+  const [spreads, setSpreads] = React.useState<SpreadItem[]>(DEFAULT_SPREADS);
 
   const totalPages = spreads.reduce((acc, s) => acc + s.pages.length, 0);
 
@@ -173,7 +173,7 @@ export const PublishPagesPanel: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            {INDESIGN_SPREADS.map(spread => {
+            {spreads.map(spread => {
               const isSelected = publishSpreadIndex === spread.index;
 
               return (
@@ -197,7 +197,7 @@ export const PublishPagesPanel: React.FC = () => {
                 >
                   {/* Left: Thumbnail Layout */}
                   <div className="flex items-center gap-3">
-                    {/* InDesign Mini Spread Visualization */}
+                    {/* Mini Spread Visualization */}
                     <div className="flex items-center justify-center h-12 w-20 bg-slate-200/50 dark:bg-black/40 rounded border border-black/5 dark:border-white/5 px-1">
                       {spread.type === 'single-right' && (
                         <div className="flex items-center">

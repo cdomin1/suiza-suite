@@ -133,7 +133,10 @@ export const VectorStrokePanel: React.FC = () => {
               {(['butt', 'round', 'square'] as const).map(c => (
                 <button
                   key={c}
-                  onClick={() => setCap(c)}
+                  onClick={() => {
+                    setCap(c);
+                    updateSelectedVectorShapes({ cap: c });
+                  }}
                   className={`py-1 rounded text-[10px] font-semibold capitalize border transition-colors ${
                     cap === c
                       ? 'bg-[#0d99ff] text-white border-[#0d99ff]'
@@ -157,7 +160,10 @@ export const VectorStrokePanel: React.FC = () => {
               {(['miter', 'round', 'bevel'] as const).map(j => (
                 <button
                   key={j}
-                  onClick={() => setJoin(j)}
+                  onClick={() => {
+                    setJoin(j);
+                    updateSelectedVectorShapes({ join: j });
+                  }}
                   className={`py-1 rounded text-[10px] font-semibold capitalize border transition-colors ${
                     join === j
                       ? 'bg-[#0d99ff] text-white border-[#0d99ff]'
@@ -206,8 +212,11 @@ export const VectorStrokePanel: React.FC = () => {
               type="checkbox"
               checked={isDashed}
               onChange={e => {
-                setIsDashed(e.target.checked);
-                setVectorStrokeStyle(e.target.checked ? 'dashed' : 'solid');
+                const checked = e.target.checked;
+                setIsDashed(checked);
+                const style = checked ? 'dashed' : 'solid';
+                setVectorStrokeStyle(style);
+                updateSelectedVectorShapes({ strokeStyle: style });
               }}
               className="accent-[#0d99ff] w-3.5 h-3.5 rounded cursor-pointer"
             />
@@ -271,10 +280,27 @@ export const VectorStrokePanel: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <Eye className="w-3.5 h-3.5 text-sky-500" />
-              <div className="w-4 h-4 rounded-sm border" style={{ backgroundColor: vectorStroke, borderColor: theme.borderStrong }} />
+              <input
+                type="color"
+                value={vectorStroke.startsWith('#') ? vectorStroke : '#0f172a'}
+                onChange={e => {
+                  setVectorStroke(e.target.value);
+                  updateSelectedVectorShapes({ stroke: e.target.value });
+                }}
+                className="w-5 h-5 rounded-xs border cursor-pointer p-0"
+              />
               <span className="font-semibold text-xs" style={{ color: theme.textPrimary }}>Stroke: {vectorStrokeWidth}pt</span>
             </div>
-            <span className="font-mono text-[10px] uppercase font-bold" style={{ color: theme.textSecondary }}>{vectorStroke}</span>
+            <input
+              type="text"
+              value={vectorStroke}
+              onChange={e => {
+                setVectorStroke(e.target.value);
+                updateSelectedVectorShapes({ stroke: e.target.value });
+              }}
+              className="w-16 px-1.5 py-0.5 rounded border text-[10px] font-mono uppercase font-bold text-center"
+              style={{ backgroundColor: theme.isLight ? '#fff' : 'rgba(0,0,0,0.3)', borderColor: theme.borderStrong, color: theme.textPrimary }}
+            />
           </div>
 
           {/* Fill item */}
@@ -287,10 +313,27 @@ export const VectorStrokePanel: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <Eye className="w-3.5 h-3.5 text-sky-500" />
-              <div className="w-4 h-4 rounded-sm border" style={{ backgroundColor: vectorFill, borderColor: theme.borderStrong }} />
+              <input
+                type="color"
+                value={vectorFill.startsWith('#') ? vectorFill : '#0d99ff'}
+                onChange={e => {
+                  setVectorFill(e.target.value);
+                  updateSelectedVectorShapes({ fill: e.target.value });
+                }}
+                className="w-5 h-5 rounded-xs border cursor-pointer p-0"
+              />
               <span className="font-semibold text-xs" style={{ color: theme.textPrimary }}>Solid Fill</span>
             </div>
-            <span className="font-mono text-[10px] uppercase font-bold" style={{ color: theme.textSecondary }}>{vectorFill}</span>
+            <input
+              type="text"
+              value={vectorFill}
+              onChange={e => {
+                setVectorFill(e.target.value);
+                updateSelectedVectorShapes({ fill: e.target.value });
+              }}
+              className="w-16 px-1.5 py-0.5 rounded border text-[10px] font-mono uppercase font-bold text-center"
+              style={{ backgroundColor: theme.isLight ? '#fff' : 'rgba(0,0,0,0.3)', borderColor: theme.borderStrong, color: theme.textPrimary }}
+            />
           </div>
         </div>
       </div>
